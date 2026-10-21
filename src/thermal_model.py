@@ -6,7 +6,7 @@ Equation (lumped energy balance, same form as the thesis):
       right : Joule heating
     xi  = austenite fraction (0 = martensite, 1 = austenite), rises with T between As and Af
     R   = resistance, mix of martensite and austenite values
-PLACEHOLDER: xi(T) is a straight ramp between As=26 C and Af=52 C until we have the ANSYS curve.
+PLACEHOLDER: xi(T) is a straight ramp between As=50.8 C and Af=51.8 C (about 1 K wide) until we have the ANSYS curve.
 """
 import sys
 from pathlib import Path

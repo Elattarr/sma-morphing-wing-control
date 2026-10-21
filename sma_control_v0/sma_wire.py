@@ -31,8 +31,8 @@ class SMAParams:
     EM: float = 46e9             # [THESIS] martensite modulus [Pa]
     eps_L: float = 0.04          # [THESIS] 3.27 % = sqrt(2/3)*eps_L  ->  eps_L = 4 %
     beta: float = 5.6e6          # [THESIS] Clausius-Clapeyron [Pa/K]
-    As: float = 26.0             # [THESIS slide-15 value; older note says 35 -> check]
-    Af: float = 52.0             # [THESIS]
+    As: float = 50.8             # [THESIS/MEFF] T0+(R-h*eps_L)/beta
+    Af: float = 51.8             # [THESIS/MEFF] T0+R/beta
     Ms: float = 24.0             # [ASSUMED]
     Mf: float = 6.0              # [ASSUMED]
     rho: float = 6450.0          # [ASSUMED] density [kg/m3]

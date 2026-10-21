@@ -12,5 +12,5 @@ T = taken from thesis, A = my assumption (change freely, state it in the README)
 | R7 | Output model error vs ANSYS | <= 5 % of full contraction | A |
 
 Full contraction target: 3.27 % x 200 mm = 6.54 mm (frozen strain from the thesis).
-Free-wire transitions (derived from MEFF constants, T0 = 22 C): As = 26 C, Af = 52 C.
+Free-wire transitions (derived from MEFF constants, T0 = 22 C): As = 50.8 C, Af = 51.8 C (window h*eps_L/beta = 1.04 K, see MEFF_window_findings.md).
 Scope: heating only. No return stroke. No load on the wire during heating.

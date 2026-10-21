@@ -8,7 +8,11 @@ WIRE = dict(
     R_M=0.051, R_A=0.064,                 # ohm
 )
 T_AMBIENT = 22.0
-AS_FREE, AF_FREE = 26.0, 52.0             # C, free wire (derived from MEFF constants)
+# MEFF constants (ANSYS Shape Memory Effect) and free-wire transformation temperatures
+# Auricchio & Petrini 2004: window Af - As = h*eps_L/beta (NOT h/beta)
+MEFF = dict(h=145.0, T0=22.0, R=167.0, beta=5.6, eps_L=0.04)   # MPa, C, MPa, MPa/C, -
+AF_FREE = MEFF["T0"] + MEFF["R"] / MEFF["beta"]                                    # 51.8 C
+AS_FREE = MEFF["T0"] + (MEFF["R"] - MEFF["h"] * MEFF["eps_L"]) / MEFF["beta"]       # 50.8 C
 FROZEN_STRAIN = 0.0327                    # sqrt(2/3) * 4 %
 CONTRACTION_MM = FROZEN_STRAIN * WIRE["L_mm"]   # about 6.54 mm
 HEATING_CASES = [(2.5, 35, 69, 173), (5.0, 26, 36, 182), (10.0, 19, 20, 199)]  # t s, I A, P W, E J

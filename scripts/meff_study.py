@@ -49,7 +49,7 @@ def free(p):
 As0, Af0, W0 = free(P0)
 print(f"\nBaseline: As={As0:.3f}, Af={Af0:.3f}, W={W0:.3f}")
 rows = []
-for name, unit in [('h','MPa'),('beta','MPa/K'),('R','MPa'),('T0','C'),('eL','-'),('m','-')]:
+for name, unit in [('h','MPa'),('beta','MPa/°C'),('R','MPa'),('T0','C'),('eL','-'),('m','-')]:
     base = P0[name] if P0[name] != 0 else 0.05
     out = []
     for f in (-0.2, +0.2):
@@ -65,7 +65,7 @@ print("EA, EM, nu: As/Af/W unchanged (stress-free: s = 0 so X = -back stress, mo
 b, h, R, eL, T0, k = P0['beta'], P0['h'], P0['R'], P0['eL'], P0['T0'], kappa_num
 print("\nLocal derivatives at baseline (m=0):")
 print(f" d(As)/dR=d(Af)/dR = {1/b:.4f} K/MPa;  d(As)/dT0 = d(Af)/dT0 = 1")
-print(f" dAs/dbeta = {-(R-h*eL)/b**2:.3f}, dAf/dbeta = {-R/b**2:.3f}, dW/dbeta = {-h*eL/b**2:.3f}  K per (MPa/K)")
+print(f" dAs/dbeta = {-(R-h*eL)/b**2:.3f}, dAf/dbeta = {-R/b**2:.3f}, dW/dbeta = {-h*eL/b**2:.3f}  K per (MPa/°C)")
 print(f" dAs/dh = {-eL/b:.5f}, dW/dh = {eL/b:.5f} K/MPa;  dAs/deL = {-h/b:.2f}, dW/deL = {h/b:.2f} K per unit")
 print(f" dAs/dm = dAf/dm = {R*k/b:.2f} K per unit m")
 
@@ -107,7 +107,7 @@ for kk in (500, 1000, 2000, 3877, 8000, 20000, 1e9):
 print(f" dWindow/dEA at k_cal: {( (lambda a,b_: (a[2][-1]-a[2][0])-(b_[2][-1]-b_[2][0]))(constrained(dict(P0,EA=P0['EA']*1.01),k_cal), constrained(P0,k_cal)) )/0.01:.2f} K per unit relative change")
 
 # ---- Clausius-Clapeyron / entropy consistency of beta ---- [AP04 eq.8_3 : entropy term -beta*||e_tr||]
-ds = b*eL                      # MPa/K * 1 = J/mm^3/K *1e-3 -> mJ/mm3/K
+ds = b*eL                      # MPa/°C * 1 = J/mm^3/K *1e-3 -> mJ/mm3/K
 for Tt in (As0+273.15, Af0+273.15):
     L = Tt*ds*1e-3             # J/mm3
     print(f"\nModel-implied latent heat at T={Tt:.1f} K: {L:.4f} J/mm3 = {L*1e9/6450/1e3:.1f} kJ/kg ; wire V=628 mm3 -> {L*628:.1f} J (plant uses 0.156 J/mm3 = {0.156*628:.1f} J)")

@@ -19,18 +19,23 @@ class MEFF:
     R: float = 167.0        # elastic-domain radius (deviatoric) [MPa]
     beta: float = 5.6       # temperature scaling [MPa/C]
     eps_L: float = 0.04     # max transformation strain (equivalent)
+    m: float = 0.01         # Lode-dependency parameter (A&P Eq.14), user-supplied ANSYS input
+
+    @property
+    def _lode(self) -> float:                   # shift of R/beta caused by m: 1/(1-kappa*m)
+        return 1.0 / (1.0 - math.sqrt(2.0 / 27.0) * self.m)
 
     @property
     def Af(self) -> float:                      # end of recovery, zero stress
-        return self.T0 + self.R / self.beta
+        return self.T0 + self.R * self._lode / self.beta
 
     @property
     def As(self) -> float:                      # start of recovery, zero stress
-        return self.T0 + (self.R - self.h * self.eps_L) / self.beta
+        return self.Af - self.window
 
     @property
     def window(self) -> float:                  # Af - As = h*eps_L/beta
-        return self.h * self.eps_L / self.beta
+        return self.h * self.eps_L / self.beta      # independent of m
 
     @property
     def stress_shift(self) -> float:            # uniaxial stress shift of the transformation temperatures [MPa/K]
@@ -44,11 +49,11 @@ class SMAParams:
     L: float = 0.20                   # active length [m]
     # material / thermal [THESIS, literature values quoted in the thesis]
     rho: float = 6450.0               # density [kg/m3]
-    c: float = 320.0                  # specific heat [J/kg/K]
+    c: float = 837.0                  # specific heat [J/kg/K]  [DATASHEET Flexinol 0.2 cal/g/C]; sweep 320-837
     latent_J_per_mm3: float = 0.156   # latent heat of M->A [J/mm3]  (= 24.2 kJ/kg)
     rho_eM: float = 0.8e-6            # resistivity martensite [ohm m]
     rho_eA: float = 1.0e-6            # resistivity austenite [ohm m]
-    h: float = 81.9                   # convection coefficient [W/m2/K] (thesis: 81.9 used, 5 considered)
+    h: float = 30.0                   # convection coefficient [W/m2/K] [ASSUMED] extrapolated to d=2 mm from Pathak 2010; range 20-82
     T_inf: float = 22.0               # ambient [C]
     # recovery map
     meff: MEFF = MEFF()

@@ -17,8 +17,8 @@ def heat_to(T_target, I, p=None, dt=0.001, t_max=200):
 
 def test_window_from_meff_constants():
     m = SMAParams().meff
-    assert m.As == pytest.approx(50.79, abs=0.01)
-    assert m.Af == pytest.approx(51.82, abs=0.01)
+    assert m.As == pytest.approx(50.867, abs=0.005)      # with Lode m = 0.01 (m = 0 gives 50.79 / 51.82)
+    assert m.Af == pytest.approx(51.903, abs=0.005)
     assert m.window == pytest.approx(1.04, abs=0.01)
 
 
@@ -41,8 +41,8 @@ def test_one_way_no_return_on_cooling():
     w, _ = heat_to(51.3, 20)                  # inside the window
     y = w.stroke_mm()
     assert 0.0 < y < 6.64
-    for _ in range(60000):
-        w.step(0.0, 0.001)                    # cool for 60 s
+    for _ in range(400000):
+        w.step(0.0, 0.001)                    # cool for 400 s (tau = mc/hS = 90 s with h = 30)
     assert w.T < 30
     assert w.stroke_mm() == pytest.approx(y)
 
@@ -70,5 +70,14 @@ def test_map_matches_ansys_within_0p25K():
 
 @pytest.mark.parametrize("I, E_thesis, tol", [(35, 173, 0.03), (26, 182, 0.04), (19, 199, 0.06)])
 def test_heating_energy_close_to_thesis_cases(I, E_thesis, tol):
-    w, _ = heat_to(73.0, I)
+    # thesis cases were computed with c = 320 J/kg/K and h = 81.9 W/m2/K, so the test pins those values
+    w, _ = heat_to(73.0, I, SMAParams(Imax=50, noise_mm=0, c=320.0, h=81.9))
     assert w.E_joule == pytest.approx(E_thesis, rel=tol)
+
+
+def test_default_parameters_energy_to_73C_is_physically_consistent():
+    """Defaults (c = 837, h = 30): sensible 102 J + latent 98 J + losses, so > 200 J at 35 A."""
+    p = SMAParams(Imax=50, noise_mm=0)
+    w, _ = heat_to(73.0, 35)
+    floor = p.heat_capacity * (73.0 - 22.0) + p.latent_total
+    assert floor < w.E_joule < 1.15 * floor

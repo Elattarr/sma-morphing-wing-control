@@ -29,3 +29,14 @@ Result file: the table printed by the script. Summary of what it showed:
 * Lambda = 46 J instead of 98 J: overshoot 13.2 % at r_ref 0.5 (the controller assumes 98 J). Needs lam_scale tuning or latent-heat estimate.
 * Window 12 K (same A_f): r_ref 0.5 overshoots to 0.97. The controller parks at A_s - 0.5 K of the nominal map, but this wire has already transformed there. One-way recovery cannot be reduced, so the overshoot is permanent. Needs the real map (bench) or a slow position-feedback approach.
 * Known open item: tests/test_controller.py h_scale=0.2 case is xfail (3.2 % overshoot vs 3 % limit) since h_c default dropped from 81.9 to 30. Controller tuning is deferred by the user.
+
+## Loading model (src/sma_control/loading.py, scripts/loading_study.py)
+
+1D uniaxial MEFF with stress input. Compared with the ANSYS standalone run (T = 22 C, force ramp to 857 N, unload).
+
+* Bulk transformation matches: 50 % of the wire transformed at 207.5 MPa average stress in both theory and ANSYS; 80 % at 209.7 (theory) vs 210.4 (ANSYS).
+* Local onset at the clamp: s_max = 204.1 MPa (theory 203.97), while the average stress is only 164 MPa there: stress concentration 1.24 at the clamped end. A 1D model cannot reproduce this early local transformation (xi_avg = 0.05 at 189.5 MPa in ANSYS vs 204.3 in theory).
+* xi_avg does not reach 1 in ANSYS (0.94 at 275 MPa): clamp regions with stress below the onset. The bulk is fully transformed.
+* Free-end displacement: 1D is 2-3 % below ANSYS during loading and also 3 % below in the purely elastic range, so this is a constant node/geometry offset, not a MEFF effect. After unloading: ANSYS 6.629 mm, 1D (xi = 1) 6.532 mm.
+* y_max = 6.64 mm therefore corresponds to a fully transformed bulk (xi about 1), not to the volume-average 0.954 / 0.940. Plant value unchanged.
+* ANSYS has no thermal coupling: self-heating during fast loading is not in the data and is not validated here.

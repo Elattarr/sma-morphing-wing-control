@@ -1,0 +1,9 @@
+== SENSORS: sequence r = 1.0 → 0.5 → 0.8 → 0.0 ==
+case                                 targets reached max hold err %   Tmax  time [s]   E [J]
+nominal (0.1 K, 0.02 mm)                     4 of 4           0.74   95.0       983     725
+T noise 0.5 K                                4 of 4           0.99   95.0      1045     740
+displacement noise 0.1 mm                    4 of 4           1.57   94.9       958     743
+displacement quantised 0.05 mm               4 of 4           0.94   95.0       955     718
+thermocouple lag 1 s                         4 of 4           1.16   95.0       965     723
+thermocouple lag 3 s                         4 of 4           0.90   94.9       967     730
+all: 0.3 K, 0.05 mm, q 0.02, lag 1 s         4 of 4           1.21   95.0      1067     747

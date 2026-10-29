@@ -1,0 +1,41 @@
+-- nominal: sigma_true = sigma_ctl = 250 MPa --  (controller windows: A_s 87.3, A_f 88.4, forward start 28.7, T_safe 31.7 C; max extension rate 0.0018 /s)
+target 1.0: reached after    7.2 s (|err| < 2 %), mean hold error +0.000, T during hold  78.7 C, Tmax in segment  88.6 C, energy    337 J
+target 0.5: reached after  441.0 s (|err| < 2 %), mean hold error -0.005, T during hold  31.6 C, Tmax in segment  69.7 C, energy     37 J
+target 0.8: reached after    4.1 s (|err| < 2 %), mean hold error +0.000, T during hold  78.3 C, Tmax in segment  88.1 C, energy    227 J
+target 0.0: reached after  604.4 s (|err| < 2 %), mean hold error +0.000, T during hold  31.6 C, Tmax in segment  69.5 C, energy     43 J
+-- sigma_true 250, controller believes 225 MPa --  (controller windows: A_s 83.7, A_f 84.7, forward start 25.1, T_safe 28.1 C; max extension rate 0.0008 /s)
+target 1.0: reached after    7.0 s (|err| < 2 %), mean hold error +0.000, T during hold  79.3 C, Tmax in segment  89.3 C, energy    339 J
+target 0.5: reached after  813.5 s (|err| < 2 %), mean hold error +0.002, T during hold  46.4 C, Tmax in segment  87.8 C, energy    322 J
+target 0.8: reached after    1.1 s (|err| < 2 %), mean hold error +0.006, T during hold  78.3 C, Tmax in segment  88.2 C, energy     46 J
+target 0.0: reached after 1214.6 s (|err| < 2 %), mean hold error +0.014, T during hold  28.1 C, Tmax in segment  69.5 C, energy    166 J
+-- sigma_true 250, controller believes 275 MPa --  (controller windows: A_s 91.0, A_f 92.0, forward start 32.4, T_safe 35.4 C; max extension rate 0.0029 /s)
+target 1.0: reached after    7.2 s (|err| < 2 %), mean hold error -0.010, T during hold  78.5 C, Tmax in segment  88.3 C, energy    335 J
+target 0.5: reached after  562.8 s (|err| < 2 %), mean hold error -0.006, T during hold  35.2 C, Tmax in segment  69.6 C, energy     85 J
+target 0.8: reached after    3.8 s (|err| < 2 %), mean hold error -0.010, T during hold  78.3 C, Tmax in segment  88.1 C, energy    211 J
+target 0.0: reached after  613.4 s (|err| < 2 %), mean hold error +0.001, T during hold  30.1 C, Tmax in segment  69.4 C, energy     59 J
+
+-- BIAS SPRING 20 N/mm, 250 MPa preload at full extension (controller knows the spring) --  (controller windows: A_s 87.3, A_f 94.4, forward start 34.7, T_safe 37.7 C; max extension rate 0.0023 /s)
+target 1.0: reached after    7.2 s (|err| < 2 %), mean hold error +0.000, T during hold  83.8 C, Tmax in segment  94.6 C, energy    358 J
+target 0.5: reached after  343.1 s (|err| < 2 %), mean hold error -0.007, T during hold  37.6 C, Tmax in segment  74.1 C, energy     70 J
+target 0.8: reached after    3.8 s (|err| < 2 %), mean hold error -0.010, T during hold  82.4 C, Tmax in segment  92.9 C, energy    220 J
+target 0.0: reached after  479.3 s (|err| < 2 %), mean hold error +0.005, T during hold  37.5 C, Tmax in segment  72.9 C, energy     68 J
+-- spring: preload true 250 / believed 230 MPa, rate true 20 / believed 20 N/mm --  (controller windows: A_s 84.4, A_f 91.5, forward start 31.8, T_safe 34.8 C; max extension rate 0.0016 /s)
+target 1.0: reached after    7.0 s (|err| < 2 %), mean hold error +0.000, T during hold  84.4 C, Tmax in segment  95.3 C, energy    360 J
+target 0.5: reached after  440.2 s (|err| < 2 %), mean hold error +0.008, T during hold  34.7 C, Tmax in segment  74.6 C, energy     97 J
+target 0.8: reached after    4.3 s (|err| < 2 %), mean hold error +0.004, T during hold  82.5 C, Tmax in segment  93.0 C, energy    233 J
+target 0.0: reached after  642.8 s (|err| < 2 %), mean hold error +0.009, T during hold  34.7 C, Tmax in segment  72.9 C, energy    108 J
+-- spring: preload true 250 / believed 270 MPa, rate true 20 / believed 20 N/mm --  (controller windows: A_s 90.2, A_f 97.3, forward start 37.7, T_safe 40.7 C; max extension rate 0.0030 /s)
+target 1.0: reached after    7.2 s (|err| < 2 %), mean hold error -0.007, T during hold  83.6 C, Tmax in segment  94.3 C, energy    356 J
+target 0.5: reached after  406.5 s (|err| < 2 %), mean hold error -0.003, T during hold  40.5 C, Tmax in segment  73.9 C, energy    104 J
+target 0.8: reached after    3.7 s (|err| < 2 %), mean hold error -0.014, T during hold  82.3 C, Tmax in segment  92.9 C, energy    208 J
+target 0.0: reached after  540.2 s (|err| < 2 %), mean hold error +0.002, T during hold  35.0 C, Tmax in segment  72.8 C, energy     93 J
+-- spring: preload true 250 / believed 250 MPa, rate true 20 / believed 15 N/mm --  (controller windows: A_s 87.3, A_f 92.9, forward start 33.3, T_safe 36.3 C; max extension rate 0.0022 /s)
+target 1.0: reached after    7.2 s (|err| < 2 %), mean hold error +0.000, T during hold  83.9 C, Tmax in segment  94.7 C, energy    358 J
+target 0.5: reached after  353.9 s (|err| < 2 %), mean hold error -0.003, T during hold  36.2 C, Tmax in segment  74.1 C, energy     68 J
+target 0.8: reached after    4.1 s (|err| < 2 %), mean hold error -0.002, T during hold  82.4 C, Tmax in segment  93.0 C, energy    227 J
+target 0.0: reached after  494.7 s (|err| < 2 %), mean hold error +0.016, T during hold  36.1 C, Tmax in segment  72.9 C, energy     67 J
+-- spring: preload true 250 / believed 250 MPa, rate true 20 / believed 25 N/mm --  (controller windows: A_s 87.3, A_f 95.8, forward start 36.2, T_safe 39.2 C; max extension rate 0.0024 /s)
+target 1.0: reached after    7.2 s (|err| < 2 %), mean hold error +0.000, T during hold  83.8 C, Tmax in segment  94.5 C, energy    358 J
+target 0.5: reached after  325.7 s (|err| < 2 %), mean hold error -0.010, T during hold  39.0 C, Tmax in segment  74.1 C, energy     70 J
+target 0.8: reached after    3.7 s (|err| < 2 %), mean hold error -0.009, T during hold  82.4 C, Tmax in segment  92.9 C, energy    215 J
+target 0.0: reached after  571.2 s (|err| < 2 %), mean hold error +0.006, T during hold  38.9 C, Tmax in segment  72.9 C, energy     96 J

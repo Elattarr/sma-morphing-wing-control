@@ -1,0 +1,3 @@
+controller heating: Imax 35.0 A, I at 3 s / 4.5 s / 8 s = 24.0 / 22.6 / 4.21 A
+Tmax 51.89 C, final strain 0.050 % (stored 3.266 %), electrical energy over 12 s: 210 J
+strain at peak load 3.859 %, after unload 3.266 %

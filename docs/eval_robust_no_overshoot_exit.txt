@@ -1,0 +1,17 @@
+== PARAMETER ERRORS: sequence r = 1.0 → 0.5 → 0.8 → 0.0 (controller built from nominal numbers) ==
+case                 targets reached max hold err %   Tmax  time [s]   E [J]
+nominal                      4 of 4           1.06   88.9      1184     646
+Lambda = 46 J                2 of 4           0.68   89.6      5000    1742
+c = 320                      4 of 4           1.49   89.7       939     377
+h_c = 5                      3 of 4           1.80   89.1      5000     571
+h_c = 82                     4 of 4           0.83   88.4       920     995
+rho reversed                 4 of 4           0.67   88.4      1182     643
+rho +20 %                    2 of 4           0.55   89.5      5000    2321
+rho -20 %                    4 of 4           1.37   88.3      1167     643
+window 12 K                  3 of 4           0.97   88.3      5000     605
+sigma_ctl -10 %              4 of 4           1.58   89.7      2171     876
+sigma_ctl +10 %              4 of 4           0.53   88.4      1311     695
+sigma_ctl -20 %              0 of 4            nan   89.9      5000   12956
+sigma_ctl +20 %              1 of 4           1.43   88.3      5000    3236
+ambient 15 C                 4 of 4           0.92   88.8      1079     875
+ambient 26 C                 4 of 4           1.41   88.9      2371     604

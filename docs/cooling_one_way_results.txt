@@ -1,0 +1,7 @@
+ONE-WAY wire, pure MEFF. Start xi = 1 at 22 C, heat 15 A to A_f+3 K, cool 900 s with I = 0.
+sigma [MPa]  A_f [C]   Tmax  d hot [mm]  fwd start sim  theory  d end [mm]  xi end
+          0     51.9   54.9       0.000            nan   -7.74       0.000   0.000
+        100     66.5   69.5       0.387            nan    6.84       0.387   0.000
+        204     81.6   84.6       0.789            nan   22.00       0.789   0.000
+        250     88.4   91.4       0.967          28.71   28.71       7.619   1.000
+fwd start sim = nan: no re-extension down to 22 C.  d includes the elastic strain sigma/E under bias.

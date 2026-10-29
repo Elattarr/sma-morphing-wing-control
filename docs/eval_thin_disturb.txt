@@ -1,0 +1,11 @@
+== DISTURBANCES DURING A MOVE ==
+disturbance onset: 38 s
+baseline extension 1→0.5: reaches 0.5 (|e|<2 %) at 56 s, final error -0.72 %
+baseline contraction 0→1: reaches 1 at 6.3 s
+case                               time to target final err %   Tmax   E[J]   note
+ext: air flow x2 from onset                  50.8       -1.14   90.8    271   
+ext: air flow x0.5 from onset                91.0       +1.03   40.6     63   
+ext: ambient +4 K from onset                 87.0       +1.07   39.8     93   
+ext: ambient +8 K from onset                130.2       +0.94   40.3     58   
+con: air flow x3 from 0 s                    11.0       -1.61   94.3     56   
+con: ambient -10 K                            6.9       +0.00   94.8     34   

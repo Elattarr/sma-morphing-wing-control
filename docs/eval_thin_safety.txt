@@ -1,0 +1,8 @@
+== SAFETY ==
+true A_f (end of recovery, highest stress): 94.4 C; controller over-temperature limit: 101.8 C
+case                                        Tmax true  final r  I at end  note
+thermocouple open (reads 0 C)                   994.5    1.000       3.0  NO INDEPENDENT PROTECTION: needs a hardware limit
+displacement sensor stuck at start              104.0    1.000       0.0  
+true stress 300, controller assumes 250         102.6    1.000       0.0  
+true stress 350, controller assumes 250         103.6    0.238       0.0  
+current limit: 3 A (clip in plant and controller); repeated cycles: identical by construction (MEFF has no drift)

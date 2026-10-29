@@ -1,0 +1,24 @@
+== 1. loading and unloading (steps 1-4), 1D MEFF vs ANSYS ==
+peak 857 N                   ANSYS defl_max   7.938 mm | 1D   7.718 mm |  -2.8 %
+end of unload/warm (35 C)    ANSYS defl_max   6.629 mm | 1D   6.532 mm |  -1.5 %
+ANSYS average stress still 18.8 MPa at end of step 4 (1D: 0); elastic part 0.082 mm
+stored displacement handed to the plant: 6.532 mm (xi = 1.000); plant default y_max 6.64 mm; ANSYS 6.629 mm
+
+== 2. recovery, step 5: temperature at which the displacement has fallen to the stated level ==
+                    ANSYS   1D MEFF  plant,T=ANSYS  plant+ctrl   (deg C)
+10 % recovered      50.91     50.97          50.97       50.97
+50 % recovered      51.38     51.38          51.38       51.38
+90 % recovered      51.80     51.80          51.80       51.80
+final displacement after step 5: ANSYS 0.0001 mm, 1D 0.0000 mm, plant(T=ANSYS) 0.0000 mm, plant+controller 0.0466 mm
+
+== 3. cooling, step 6 ==
+ANSYS displacement change during cooling: 0.00e+00 mm
+plant displacement change during cooling 0.0466 -> 0.0466 mm, T 51.9 -> 22.00 C in 900 s
+
+== 4. controller heating (cycle 1, start 35 C, ambient 22 C) ==
+time to 98 % stroke 4.50 s, Tmax 51.90 C, Imax 34.5 A, electrical energy 199 J
+
+== 5. second cycle (reload by MEFF at 22 C, controller heating from 22 C) ==
+stored displacement cycle 2 6.5320 mm vs cycle 1 6.5320 mm (identical by construction: MEFF has no cycling drift)
+time to 98 % stroke 5.14 s, Tmax 51.89 C, energy 242 J (cycle 1: 199 J, from 35 C)
+final displacement cycle 2 0.0787 mm

@@ -1,0 +1,10 @@
+phase end          sigma [MPa] strain [%]   T [C]     xi
+after load               272.8      3.859   22.00  1.000
+after unload               0.0      3.266   22.00  1.000
+after heating              0.0      0.000   54.94  0.000
+after cooling              0.0      0.000   22.04  0.000
+after reload             272.8      3.859   22.00  1.000
+after 2nd unload           0.0      3.266   22.00  1.000
+
+heating at 15 A takes 18.4 s, Tmax 54.9 C; cooling phase 600 s
+peak strain at 272.8 MPa: 3.859 % ; stored strain after unload: 3.266 %

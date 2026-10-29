@@ -4,3 +4,4 @@ up ramp 0→1 in 300 s                    1.53      3.28         10             
 down ramp 1→0 in 900 s                  3.60      7.46         30             2.01   32.7    207
 sine 0.5±0.2, period 2400 s             1.75      4.54         40             0.90   88.0   5053
 sine 0.5±0.2, period 900 s              4.04     13.25         30             2.60   88.0   3296
+safety monitor: no trips in any run

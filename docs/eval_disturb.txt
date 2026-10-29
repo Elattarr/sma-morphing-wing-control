@@ -1,10 +1,12 @@
 == DISTURBANCES DURING A MOVE ==
+disturbance onset: 150 s
 baseline extension 1→0.5: reaches 0.5 (|e|<2 %) at 285 s, final error -0.56 %
 baseline contraction 0→1: reaches 1 at 7.1 s
 case                               time to target final err %   Tmax   E[J]   note
-ext: air flow x2 from 150 s                 276.2       -1.70   40.9    645   
-ext: air flow x0.5 from 150 s               458.2       +0.96   32.7    105   
-ext: ambient +4 K from 150 s                515.5       +0.93   32.7     99   
-ext: ambient +8 K from 150 s                  nan      +26.79   31.7      8   target never reached
+ext: air flow x2 from onset                 276.2       -1.70   40.9    645   
+ext: air flow x0.5 from onset               458.2       +0.96   32.7    105   
+ext: ambient +4 K from onset                515.5       +0.93   32.7     99   
+ext: ambient +8 K from onset                  nan      +26.79   31.7      8   target never reached
 con: air flow x3 from 0 s                     7.3       +0.00   88.4    363   
 con: ambient -10 K                            7.7       +0.00   88.9    374   
+safety monitor: no trips in any run

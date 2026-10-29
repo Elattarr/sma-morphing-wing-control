@@ -1,0 +1,10 @@
+== STRUCTURAL MISMATCH: plant = parallel elements with spread of transformation temperatures; controller unchanged ==
+case                                       targets reached max hold err %   Tmax  time [s]   E [J] homing [s]
+single element (controller's own model)            4 of 4           1.24  117.4       224      61        206
+spread 1 K (window about 4 K wider)                4 of 4           1.81  118.9       230      62        211
+spread 2 K (about 7 K wider)                       4 of 4           1.39  119.9       269      70        218
+spread 3 K (about 10 K wider)                      4 of 4           1.36  121.2       278      73        228
+spread 5 K (about 16 K wider)                      0 of 4            nan  121.9         0       0        266   homing FAULT: preload_too_low
+spread 2 K + 25 % tail to 20 K                     4 of 4           1.52  122.2       268      87        216
+spread 3 K + 25 % tail to 20 K                     4 of 4           1.84  122.2       268      85        224
+safety monitor: no trips in any run

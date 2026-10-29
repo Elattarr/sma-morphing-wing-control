@@ -1,0 +1,15 @@
+== OTHER MATERIALS, gains unchanged: sequence r = 1.0 -> 0.5 -> 0.8 -> 0.0, preload from the return rule ==
+material                                              preload    A_s    A_f |    nominal ctl hold err % |        own ctl hold err %   Tmax
+specimen C (baseline)                                    293    93.8  100.2 |      4 of 4       1.42 |      4 of 4       1.42  118.1 
+Auricchio 2009 type: h 100, eps_L 5.1 %, beta 7.7        323    77.3   83.2 |      4 of 4       1.26 |      4 of 4       1.33  101.6 
+cold-worked: h 700 (window 5 K)                          321    93.8  104.2 |      4 of 4       1.34 |      4 of 4       1.34  121.0 
+cold-worked: h 1400 (window 10 K)                        355    93.9  109.1 |      4 of 4       1.30 |      4 of 4       1.30  122.2 
+T0 +13 K (35 C), preload of specimen C                   293   106.7  113.3 |      4 of 4       1.02 |      4 of 4       1.02  122.2 
+T0 -10 K (12 C), preload of specimen C                   293    83.7   90.3 |      4 of 4       1.79 |      4 of 4       1.79  107.9 
+beta 4.5                                                 277   108.3  116.6 |      4 of 4       1.36 |      4 of 4       1.36  122.2 
+beta 8.0                                                 329    75.9   80.5 |      4 of 4       1.15 |      4 of 4       1.15   98.2 
+eps_L 3 %                                                292    93.6   98.6 |      4 of 4       1.41 |      4 of 4       1.44  116.3 
+eps_L 6 %                                                297    93.8  103.6 |      4 of 4       1.29 |      4 of 4       1.26  121.0 
+R 120 (narrow hysteresis)                                236    76.9   83.6 |      4 of 4       1.26 |      4 of 4       1.26  101.3 
+R 220 (wide hysteresis)                                  358   112.6  119.1 |      4 of 4       1.69 |      4 of 4       1.69  122.0 
+safety monitor: no trips in any run

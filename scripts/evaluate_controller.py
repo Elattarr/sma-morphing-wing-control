@@ -17,32 +17,40 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from sma_control import SMAParams
 from sma_control.cycle_plant import SMAWireCycle
-from sma_control.cycle_controller import CycleController, CycleCfg, cfg_for_wire
+from sma_control.cycle_controller import CycleController, CycleCfg, cfg_for_wire, HomingRoutine
 from sma_control.spring import SMAWireSpring, BiasSpring
+from sma_control.elements import SMAWireElements
+from sma_control.safety import SafetyMonitor
 
 D_MM = float(os.environ.get("SMA_D_MM", "2.0"))                 # wire diameter [mm]
 I_MAX = float(os.environ["SMA_IMAX"]) if "SMA_IMAX" in os.environ else None       # current limit [A] (default: SMAParams default 35 A)
 NOM = SMAParams(d=D_MM * 1e-3, **({} if I_MAX is None else dict(Imax=I_MAX)))
-SIG = 250.0
+SIG = float(os.environ.get("SMA_SIG", "250.0"))                    # MPa, stress at full extension (preload); controller knows it
 TS = 0.05
 K_SPRING = float(os.environ["SMA_SPRING_K"]) if "SMA_SPRING_K" in os.environ else None      # N/mm, None = constant stress
 OVERSHOOT_EXIT = "SMA_NO_OVERSHOOT_EXIT" not in os.environ
+GUARD = "SMA_NO_GUARD" not in os.environ                  # independent safety monitor between controller and plant
+HOMING = "SMA_NO_HOMING" not in os.environ                # homing cycle before the move sequence (measures end points and windows)
 
 
 def make_cfg():
     return cfg_for_wire(NOM, Ts=TS, overshoot_exit=OVERSHOOT_EXIT)
 
 
-def make_plant(p, T0, xi0, sigma_true):
+def make_plant(p, T0, xi0, sigma_true, struct=None):
+    """struct: dict(spread_K, tail_frac, tail_K) -> parallel-elements plant (needs the spring)"""
     if K_SPRING is None:
         return SMAWireCycle(p, T0=T0, xi0=xi0)
+    if struct is not None:
+        return SMAWireElements(p, BiasSpring(sigma_true, K_SPRING), T0=T0, xi0=xi0, **struct)
     return SMAWireSpring(p, BiasSpring(sigma_true, K_SPRING), T0=T0, xi0=xi0)
 
 
-def make_ctl(sigma_ctl, cfg):
+def make_ctl(sigma_ctl, cfg, p=None):
+    p = p or NOM
     if K_SPRING is None:
-        return CycleController(NOM, sigma_ctl, cfg)
-    return CycleController(NOM, sigma_ctl, cfg, K_spring=BiasSpring(sigma_ctl, K_SPRING).K(NOM))
+        return CycleController(p, sigma_ctl, cfg)
+    return CycleController(p, sigma_ctl, cfg, K_spring=BiasSpring(sigma_ctl, K_SPRING).K(p))
 
 
 def plant_step(w, I, dt, sigma_true, T_inf, h_scale=1.0):
@@ -74,6 +82,76 @@ class Sensors:
         return Tm, d
 
 
+TRIPS = []        # (label, reason, time) of every safety-monitor trip in this run
+
+
+class Guard:
+    """safety monitor + independent over-temperature channel T2 + fault injection (fault active from t_fault)
+    faults: tc_open | tc_stuck (T1 frozen at its value then) | tc_offset (T1 reads 30 K low) | d_stuck | hang | stuck_on | wire_open"""
+    def __init__(self, p, Ts, fault=None, t_fault=0.0, seed=2, label="", T_lag=0.0, protect=True, use_T2=True):
+        self.mon, self.Ts, self.p, self.T_lag, self.T2f, self.protect = SafetyMonitor(p, Ts), Ts, p, T_lag, None, protect
+        self.use_T2 = use_T2
+        self._d_frozen, self.Tmax_after = None, 0.0
+        self.rows, self.arm_info = [], None            # replay log for the C port: one row per sample (see c/replay.c)
+        self.fault, self.tf, self.label = fault, t_fault, label
+        self.rng, self.t, self.beat, self.I_prev, self.last_cmd, self._frozen, self._armed = np.random.default_rng(seed), 0.0, 0, 0.0, 0.0, None, False
+
+    def _on(self):
+        return self.fault is not None and self.t >= self.tf
+
+    def sense(self, Tm, d, w):
+        """apply sensor faults; returns (T1, d)"""
+        if self._on():
+            if self.fault == "tc_open":
+                Tm = 0.0
+            elif self.fault == "tc_stuck":
+                self._frozen = Tm if self._frozen is None else self._frozen
+                Tm = self._frozen
+            elif self.fault == "tc_offset":
+                Tm = Tm - 30.0
+            elif self.fault == "d_stuck":
+                self._d_frozen = d if self._d_frozen is None else self._d_frozen
+                d = self._d_frozen
+        return Tm, d
+
+    def apply(self, w, I_cmd, T1, d, phase=1, tgt=0.0):
+        mon, p = self.mon, self.p
+        I_ctl = I_cmd
+        if not self._armed:
+            T2a = (w.T + 0.2 * self.rng.standard_normal()) if self.use_T2 else None
+            mon.arm(T1, T2a)
+            self.arm_info = (T1, T2a)
+            self._armed = True
+        if self._on() and self.fault == "hang":
+            I_cmd = self.last_cmd                                  # controller frozen: command and heartbeat stop
+        else:
+            self.last_cmd, self.beat = I_cmd, self.beat + 1
+        self.T2f = w.T if self.T2f is None else self.T2f
+        if self.T_lag > 0:
+            self.T2f += self.Ts / self.T_lag * (w.T - self.T2f)                # second channel is the same sensor type: same lag
+        else:
+            self.T2f = w.T
+        T2 = self.T2f + 0.2 * self.rng.standard_normal() if self.use_T2 else None
+        R = p.resistance(1.0 - w.xi) * (3.0 if (self._on() and self.fault == "wire_open") else 1.0)
+        V = self.I_prev * R * (1.0 + 0.01 * self.rng.standard_normal())
+        if self.protect:
+            Ip, relay = mon.step(I_cmd, self.I_prev, T1, T2, d, V, self.beat)
+        else:                                                      # same fault injection, no monitor (baseline)
+            Ip, relay = float(np.clip(I_cmd, 0.0, p.Imax)), True
+        I = (p.Imax if (self._on() and self.fault == "stuck_on") else Ip) if relay else 0.0
+        self.rows.append((phase, tgt, T1, d, I_ctl, I_cmd, self.I_prev, T2, V, self.beat, Ip, relay))
+        self.I_prev, self.t = I, self.t + self.Ts
+        if self._on():
+            self.Tmax_after = max(self.Tmax_after, w.T)
+        if self.protect and mon.tripped and not any(x[0] == self.label and x[1] == mon.reason for x in TRIPS):
+            TRIPS.append((self.label, mon.reason, self.t))
+        return I
+
+
+def new_guard(cfg, sens=None, **kw):
+    return Guard(NOM, cfg.Ts, T_lag=getattr(sens, "T_lag", 0.0), **kw) if GUARD else None
+
+
 def simulate(r_ref, T_end, p_true=None, sigma_true=SIG, sigma_ctl=SIG, cfg=None, xi0=1.0, T0=22.0,
              T_amb=lambda t: 22.0, h_scale=lambda t: 1.0, sens=None):
     """returns log [t, T, r, r_ref, I, T_meas, E_joule]"""
@@ -92,22 +170,58 @@ def simulate(r_ref, T_end, p_true=None, sigma_true=SIG, sigma_ctl=SIG, cfg=None,
     return log
 
 
+def do_homing(w, ctl, sens, cfg, T_amb, sigma_true, t_max=6000.0, guard=None):
+    """run the homing cycle on the plant; returns dict(t, Tmax, E, fault, cal, guard)"""
+    h, t, Tmax, E0 = HomingRoutine(ctl), 0.0, w.T, w.E_joule
+    while not h.done and t < t_max:
+        Tm, d = sens.read(w.T, w.disp_mm(sigma_true), cfg.Ts)
+        if guard:
+            Tm, d = guard.sense(Tm, d, w)
+        I = h.step(Tm, d)
+        if guard:
+            I = guard.apply(w, I, Tm, d, phase=0)
+            if guard.protect and guard.mon.tripped:
+                h.fault, h.done = "safety_trip:" + guard.mon.reason, True
+        plant_step(w, I, cfg.Ts, sigma_true, T_amb)
+        t += cfg.Ts
+        Tmax = max(Tmax, w.T)
+    if h.cal is not None:
+        ctl.apply_calibration(h.cal)
+        if guard:
+            guard.mon.set_calibration((h.cal.eps_ext - h.cal.eps_con) * NOM.L * 1e3, h.cal.Af)
+    elif not h.done:
+        h.fault = "timeout"
+    return dict(t=t, Tmax=Tmax, E=w.E_joule - E0, fault=h.fault, cal=h.cal, guard=guard)
+
+
 def sequence(targets=(1.0, 0.5, 0.8, 0.0), hold_s=30.0, t_max=5000.0, p_true=None, sigma_true=SIG, sigma_ctl=SIG,
-             sens=None, T_amb=22.0):
+             sens=None, T_amb=22.0, struct=None, guard=None, label="", p_ctl=None):
     """event-driven target sequence: next target after the true r has been within 2 % for hold_s seconds"""
     cfg = make_cfg()
-    w = make_plant(p_true or NOM, T_amb, 1.0, sigma_true)
-    ctl = make_ctl(sigma_ctl, cfg)
+    w = make_plant(p_true or NOM, T_amb, 1.0, sigma_true, struct)
+    ctl = make_ctl(sigma_ctl, cfg, p_ctl)
     sens = sens or Sensors(T0=T_amb)
+    guard = guard or new_guard(cfg, sens=sens, label=label)
+    home = do_homing(w, ctl, sens, cfg, T_amb, sigma_true, guard=guard) if HOMING else dict(t=0.0, Tmax=T_amb, E=0.0, fault=None, cal=None, guard=guard)
+    if home["fault"]:
+        return np.zeros((1, 7)), [], home
+    E0 = w.E_joule
     log, seg, k_t, t_in = [], [], 0, None
     for k in range(int(t_max / cfg.Ts)):
         t = k * cfg.Ts
         tgt = targets[k_t]
         Tm, d = sens.read(w.T, w.disp_mm(sigma_true), cfg.Ts)
         r_true = 1.0 - w.xi
+        if guard:
+            Tm, d = guard.sense(Tm, d, w)
         I = ctl.step(tgt, Tm, d)
+        if guard:
+            I = guard.apply(w, I, Tm, d, phase=1, tgt=tgt)
         plant_step(w, I, cfg.Ts, sigma_true, T_amb)
-        log.append((t, w.T, 1.0 - w.xi, tgt, I, Tm, w.E_joule))
+        log.append((t, w.T, 1.0 - w.xi, tgt, I, Tm, w.E_joule - E0))
+        if guard and guard.protect and guard.mon.tripped:
+            home["trip"] = (guard.mon.reason, t)
+            break
         if abs(r_true - tgt) < 0.02 and ctl.mode == "hold":
             t_in = t if t_in is None else t_in
             if t - t_in >= hold_s:
@@ -116,16 +230,21 @@ def sequence(targets=(1.0, 0.5, 0.8, 0.0), hold_s=30.0, t_max=5000.0, p_true=Non
                     break
         elif abs(r_true - tgt) >= 0.02:
             t_in = None
-    return np.array(log), seg
+    return np.array(log), seg, home
 
 
-def seq_summary(L, seg, n_targets=4):
+def seq_summary(L, seg, home=None, n_targets=4):
+    home = home or dict(t=0.0, Tmax=0.0, fault=None)
     errs, t_prev = [], 0.0
     for tgt, tr, te in seg:
         m = (L[:, 0] >= tr) & (L[:, 0] <= te)
         errs.append(abs(L[m, 2].mean() - tgt))
-    return dict(reached=len(seg), n=n_targets, max_err=100 * max(errs) if errs else np.nan, Tmax=L[:, 1].max(),
-                t_total=L[-1, 0] if len(seg) < n_targets else seg[-1][2], E=L[-1, 6])
+    return dict(reached=len(seg), n=n_targets, max_err=100 * max(errs) if errs else np.nan, Tmax=max(L[:, 1].max(), home["Tmax"]),
+                t_total=L[-1, 0] if len(seg) < n_targets else seg[-1][2], E=L[-1, 6], home_t=home["t"], home_fault=home["fault"])
+
+
+def home_note(s):
+    return f"   homing FAULT: {s['home_fault']}" if s["home_fault"] else ""
 
 
 # ====================================================================== metrics
@@ -265,18 +384,19 @@ def case_list():
             ("window 12 K", dict(p_true=replace(NOM, meff=wide))),
             ("sigma_ctl -10 %", dict(sigma_ctl=225.0)), ("sigma_ctl +10 %", dict(sigma_ctl=275.0)),
             ("sigma_ctl -20 %", dict(sigma_ctl=200.0)), ("sigma_ctl +20 %", dict(sigma_ctl=300.0)),
-            ("ambient 15 C", dict(T_amb=15.0)), ("ambient 26 C", dict(T_amb=26.0))]
+            ("ambient 15 C", dict(T_amb=15.0)), ("ambient 26 C", dict(T_amb=26.0)),
+            ("ambient 26 C, preload 290", dict(T_amb=26.0, sigma_true=290.0, sigma_ctl=290.0))]
 
 
 def sec_robust(fig=None):
     print("== PARAMETER ERRORS: sequence r = 1.0 → 0.5 → 0.8 → 0.0 (controller built from nominal numbers) ==")
-    print(f"{'case':20s} {'targets reached':>15s} {'max hold err %':>14s} {'Tmax':>6s} {'time [s]':>9s} {'E [J]':>7s}")
+    print(f"{'case':20s} {'targets reached':>15s} {'max hold err %':>14s} {'Tmax':>6s} {'time [s]':>9s} {'E [J]':>7s} {'homing [s]':>10s}")
     rows = []
     for name, kw in case_list():
-        L, seg = sequence(**kw)
-        s = seq_summary(L, seg)
+        L, seg, home = sequence(**kw, label=name)
+        s = seq_summary(L, seg, home)
         rows.append((name, s))
-        print(f"{name:20s} {s['reached']:>9d} of {s['n']} {s['max_err']:14.2f} {s['Tmax']:6.1f} {s['t_total']:9.0f} {s['E']:7.0f}")
+        print(f"{name:20s} {s['reached']:>9d} of {s['n']} {s['max_err']:14.2f} {s['Tmax']:6.1f} {s['t_total']:9.0f} {s['E']:7.0f} {s['home_t']:10.0f}{home_note(s)}")
     if fig:
         import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
         sty(plt)
@@ -289,32 +409,76 @@ def sec_robust(fig=None):
         f.tight_layout(); f.savefig(Path(fig) / "fig15_robustness.png", dpi=150, facecolor=BG)
 
 
+STRUCT_CASES = [("single element (controller's own model)", None),
+                ("spread 1 K (window about 4 K wider)", dict(spread_K=1.0)),
+                ("spread 2 K (about 7 K wider)", dict(spread_K=2.0)),
+                ("spread 3 K (about 10 K wider)", dict(spread_K=3.0)),
+                ("spread 5 K (about 16 K wider)", dict(spread_K=5.0)),
+                ("spread 2 K + 25 % tail to 20 K", dict(spread_K=2.0, tail_frac=0.25, tail_K=20.0)),
+                ("spread 3 K + 25 % tail to 20 K", dict(spread_K=3.0, tail_frac=0.25, tail_K=20.0))]
+
+
+def sec_struct(fig=None):
+    if K_SPRING is None:
+        print("structural cases need the spring (SMA_SPRING_K)"); return
+    print("== STRUCTURAL MISMATCH: plant = parallel elements with spread of transformation temperatures; controller unchanged ==")
+    print(f"{'case':42s} {'targets reached':>15s} {'max hold err %':>14s} {'Tmax':>6s} {'time [s]':>9s} {'E [J]':>7s} {'homing [s]':>10s}")
+    rows = []
+    for name, st in STRUCT_CASES:
+        L, seg, home = sequence(struct=st, label=name)
+        s_ = seq_summary(L, seg, home)
+        rows.append((name, L, seg))
+        print(f"{name:42s} {s_['reached']:>9d} of {s_['n']} {s_['max_err']:14.2f} {s_['Tmax']:6.1f} {s_['t_total']:9.0f} {s_['E']:7.0f} {s_['home_t']:10.0f}{home_note(s_)}")
+    if fig:
+        import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+        sty(plt)
+        f, ax = plt.subplots(2, 4, figsize=(17, 7.5), sharey=True)
+        for a, (name, L, seg) in zip(ax.ravel(), rows):
+            a.plot(L[:, 0], L[:, 3], color=OR, lw=1.3, ls="--"); a.plot(L[:, 0], L[:, 2], color=INK, lw=1.8)
+            a.set_title(name, loc="left", fontsize=8.5); a.set_xlabel("time [s]")
+        ax[0, 0].set_ylabel("r"); ax[1, 0].set_ylabel("r")
+        f.tight_layout(); f.savefig(Path(fig) / "fig17_structural.png", dpi=150, facecolor=BG)
+
+
 def sec_sensors(fig=None):
     print("== SENSORS: sequence r = 1.0 → 0.5 → 0.8 → 0.0 ==")
-    print(f"{'case':36s} {'targets reached':>15s} {'max hold err %':>14s} {'Tmax':>6s} {'time [s]':>9s} {'E [J]':>7s}")
+    print(f"{'case':36s} {'targets reached':>15s} {'max hold err %':>14s} {'Tmax':>6s} {'time [s]':>9s} {'E [J]':>7s} {'homing [s]':>10s}")
     for name, kw in (("nominal (0.1 K, 0.02 mm)", {}), ("T noise 0.5 K", dict(Tn=0.5)), ("displacement noise 0.1 mm", dict(dn=0.1)),
                      ("displacement quantised 0.05 mm", dict(quant=0.05)), ("thermocouple lag 1 s", dict(T_lag=1.0)),
                      ("thermocouple lag 3 s", dict(T_lag=3.0)),
                      ("all: 0.3 K, 0.05 mm, q 0.02, lag 1 s", dict(Tn=0.3, dn=0.05, quant=0.02, T_lag=1.0))):
-        L, seg = sequence(sens=Sensors(**kw))
-        s = seq_summary(L, seg)
-        print(f"{name:36s} {s['reached']:>9d} of {s['n']} {s['max_err']:14.2f} {s['Tmax']:6.1f} {s['t_total']:9.0f} {s['E']:7.0f}")
+        L, seg, home = sequence(sens=Sensors(**kw), label=name)
+        s = seq_summary(L, seg, home)
+        print(f"{name:36s} {s['reached']:>9d} of {s['n']} {s['max_err']:14.2f} {s['Tmax']:6.1f} {s['t_total']:9.0f} {s['E']:7.0f} {s['home_t']:10.0f}{home_note(s)}")
 
 
 def sec_safety(fig=None):
-    print("== SAFETY ==")
-    A_f = make_ctl(SIG, make_cfg()).Af
-    print(f"true A_f (end of recovery, highest stress): {A_f:.1f} C; controller over-temperature limit: {make_ctl(SIG, make_cfg()).T_limit:.1f} C")
-    cases = [("thermocouple open (reads 0 C)", dict(sens=Sensors(T_open=True)), SIG),
-             ("displacement sensor stuck at start", dict(sens=Sensors(d_stuck=NOM.L * 1e3 * np.sqrt(2 / 3) * NOM.meff.eps_L + SIG / 46000.0 * 200.0)), SIG),
-             ("true stress 300, controller assumes 250", dict(sigma_true=300.0), SIG),
-             ("true stress 350, controller assumes 250", dict(sigma_true=350.0), SIG)]
-    print(f"{'case':42s} {'Tmax true':>10s} {'final r':>8s} {'I at end':>9s}  note")
-    for name, kw, _ in cases:
-        L = simulate(lambda t: 1.0, 200.0, **kw)
-        note = "NO INDEPENDENT PROTECTION: needs a hardware limit" if L[:, 1].max() > 120 else ""
-        print(f"{name:42s} {L[:, 1].max():10.1f} {L[-1, 2]:8.3f} {L[-1, 4]:9.1f}  {note}")
-    print(f"current limit: {NOM.Imax:.0f} A (clip in plant and controller); repeated cycles: identical by construction (MEFF has no drift)")
+    print("== SAFETY: injected faults, with and without the independent monitor ==")
+    cfg = make_cfg()
+    print(f"controller over-temperature limit {make_ctl(SIG, cfg).T_limit:.1f} C, absolute {cfg.T_abs_max:.0f} C; monitor hard trip {SafetyMonitor(NOM, cfg.Ts).c.T_trip:.0f} C")
+    faults = [("thermocouple open (reads 0 C)", "tc_open", (20.0, 290.0)), ("thermocouple frozen", "tc_stuck", (20.0, 290.0)),
+              ("thermocouple reads 30 K low", "tc_offset", (20.0, 290.0)),
+              ("position sensor frozen", "d_stuck", (20.0, 250.0)), ("controller hangs, current frozen", "hang", (20.0, 250.0)),
+              ("power stage stuck on", "stuck_on", (20.0, 290.0)), ("wire contact fails (R x3)", "wire_open", (20.0, 290.0))]
+    T_trip = SafetyMonitor(NOM, cfg.Ts).c.T_trip
+    print(f"{'fault (second channel T2 present)':36s} {'at [s]':>6s} | {'no monitor: Tmax after':>22s} | {'stopped by':>28s} {'t [s]':>7s} {'Tmax after':>10s}  result")
+    n_ok = n = 0
+    rows = [(nm, f, tf, True) for nm, f, tfs in faults for tf in tfs] + [(nm + " [no T2]", f, tf, False) for nm, f, tfs in faults[:3] for tf in tfs]
+    for name, f, t_f, use_T2 in rows:
+        if not use_T2 and name.endswith("[no T2]") and t_f == 20.0 and f == faults[0][1]:
+            print(f"{'fault (single thermocouple, envelope check only)':36s}")
+        res = []
+        for protect in (False, True):
+            g = Guard(NOM, cfg.Ts, fault=f, t_fault=t_f, label=name, protect=protect, use_T2=use_T2)
+            L, seg, home = sequence(t_max=900.0, guard=g, sens=Sensors(T0=22.0))
+            by = g.mon.reason if (protect and g.mon.tripped) else (("homing: " + home["fault"].replace("safety_trip:", "")) if (protect and home["fault"]) else None)
+            res.append((g.Tmax_after, by, g.t))
+        (Tn, _, _), (Tp, by, tt) = res
+        ok = by is not None and Tp < T_trip + 10.0
+        n, n_ok = n + 1, n_ok + ok
+        print(f"{name:36s} {t_f:6.0f} | {Tn:22.1f} | {str(by):>28s} {tt:7.1f} {Tp:10.1f}  {'ok' if ok else 'NOT STOPPED'}")
+    print(f"{n_ok} of {n} fault runs stopped below the trip temperature + 10 K; fail-safe state = power off, wire extends under the bias spring")
+    # no-fault runs with the monitor are in every other section ('safety monitor: no trips in any run')
 
 
 # ====================================================================== style
@@ -327,7 +491,9 @@ def sty(plt):
                          "axes.spines.top": False, "axes.spines.right": False, "font.size": 9.5})
 
 
-SECTIONS = dict(steps=sec_steps, ramps=sec_ramps, disturb=sec_disturb, robust=sec_robust, sensors=sec_sensors, safety=sec_safety)
+SECTIONS = dict(struct=sec_struct, steps=sec_steps, ramps=sec_ramps, disturb=sec_disturb, robust=sec_robust, sensors=sec_sensors, safety=sec_safety)
 
 if __name__ == "__main__":
     SECTIONS[sys.argv[1]](sys.argv[2] if len(sys.argv) > 2 else None)
+    if GUARD and sys.argv[1] != "safety":
+        print("safety monitor: " + ("no trips in any run" if not TRIPS else "TRIPS " + "; ".join(f"{a}: {b} at {c:.0f} s" for a, b, c in TRIPS)))

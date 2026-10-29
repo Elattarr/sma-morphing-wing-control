@@ -1,9 +1,10 @@
 == SENSORS: sequence r = 1.0 → 0.5 → 0.8 → 0.0 ==
-case                                 targets reached max hold err %   Tmax  time [s]   E [J]
-nominal (0.1 K, 0.02 mm)                     4 of 4           1.06   88.9      1184     646
-T noise 0.5 K                                4 of 4           0.96   88.8      1168     643
-displacement noise 0.1 mm                    4 of 4           1.08   88.3      1190     672
-displacement quantised 0.05 mm               4 of 4           0.85   88.9      1183     646
-thermocouple lag 1 s                         4 of 4           1.07   88.8      1186     647
-thermocouple lag 3 s                         4 of 4           0.74   88.8      1189     649
-all: 0.3 K, 0.05 mm, q 0.02, lag 1 s         4 of 4           1.15   88.8      1177     645
+case                                 targets reached max hold err %   Tmax  time [s]   E [J] homing [s]
+nominal (0.1 K, 0.02 mm)                     4 of 4           0.80  106.3      1174     634        767
+T noise 0.5 K                                4 of 4           0.95  106.5      1344     680        768
+displacement noise 0.1 mm                    4 of 4           1.39  105.1      1185     633        763
+displacement quantised 0.05 mm               4 of 4           0.95  106.3      1179     634        767
+thermocouple lag 1 s                         4 of 4           1.64  106.8      1194     639        768
+thermocouple lag 3 s                         4 of 4           0.52  106.5      1347     688        767
+all: 0.3 K, 0.05 mm, q 0.02, lag 1 s         4 of 4           1.95  106.3      1137     627        767
+safety monitor: no trips in any run

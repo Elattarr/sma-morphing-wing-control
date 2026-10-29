@@ -40,3 +40,23 @@ Result file: the table printed by the script. Summary of what it showed:
 * Free-end displacement: 1D is 2-3 % below ANSYS during loading and also 3 % below in the purely elastic range, so this is a constant node/geometry offset, not a MEFF effect. After unloading: ANSYS 6.629 mm, 1D (xi = 1) 6.532 mm.
 * y_max = 6.64 mm therefore corresponds to a fully transformed bulk (xi about 1), not to the volume-average 0.954 / 0.940. Plant value unchanged.
 * ANSYS has no thermal coupling: self-heating during fast loading is not in the data and is not validated here.
+
+## Full-cycle controller, safety layer, identification, C port (added with the bias-spring work)
+
+All numbers below are design choices or assumptions; none was measured on a real wire. Evaluation files: `docs/eval_*.txt`.
+
+| Item | Value | Tag | Replace with |
+|---|---|---|---|
+| Wire for the real build | 0.5 mm, 200 mm; 2 mm needs 660-790 N preload to return at ambient | DESIGN | - |
+| Bias spring | 1.25 N/mm (0.5 mm wire), 20 N/mm (2 mm wire) | DESIGN | measured spring rate |
+| Preload (stress at the extended end) | 290 MPa = 57 N (0.5 mm). Rule: T_fwd(1) = T_ambient + 12 K, i.e. sigma = ((T_amb + 12 - T0) beta + R/(1+kappa m) + h eps_L)/sqrt(2/3) | DESIGN | load cell |
+| Homing refusal | `preload_too_low` if the measured end of extension is < 2 K above ambient (the wire cannot return fully; the position scale would be wrong) | DESIGN | - |
+| Current limit | 3 A (0.5 mm), 35 A (2 mm) | ASSUMED | actual driver / wire datasheet |
+| T_abs_max | 125 C; homing peak is A_f + ~17 K (111 C nominal, up to 122 C for wide windows / other alloys) | ASSUMED | wire and insulation datasheet |
+| Convection h | 30 W/m2K, evaluated 5-82 | ASSUMED | `identify.fit_thermal` (bench Test A) |
+| Sensors (evaluation) | T1 noise 0.1 K (to 0.5 K), lag 0-3 s; displacement 0.02 mm noise (to 0.1 mm), quantisation to 0.05 mm; 20 Hz | ASSUMED | bench noise at rest |
+| Safety monitor bounds | h in [5, 100] W/m2K, m c in [0.3, 2] x nominal, latent heat <= 3 x nominal, ambient +-10 K at arming, thermocouple lag <= 4 s, hard trip 130 C, T1-T2 disagreement 12 K (25 K while changing fast), stall: > A_f,max + 5 K for 8 s with < 15 % of the stroke moved | ASSUMED | tune on the bench (Gate 4 of BENCH_PROTOCOL.md) |
+| Structural plant | 21 parallel elements, temperature spread 1-5 K (Gaussian) plus optional one-sided tail (25 % of elements, to 20 K) | ASSUMED | strain-temperature curve of the real wire |
+| Other alloys | MEFF constants varied one at a time (h 100-1400, beta 4.5-8, eps_L 3-6 %, R 120-220, T0 +13/-10 K); thermal and electrical data kept | ASSUMED | datasheet of the actual alloy |
+
+What the verification does NOT cover: the real wire (end effects at the clamps, non-uniform temperature, functional fatigue, creep), a different alloy's thermal data, the wing (coupled stiffness), the two-way effect, MATLAB/Simulink.

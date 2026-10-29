@@ -1,17 +1,19 @@
 == PARAMETER ERRORS: sequence r = 1.0 → 0.5 → 0.8 → 0.0 (controller built from nominal numbers) ==
-case                 targets reached max hold err %   Tmax  time [s]   E [J]
-nominal                      4 of 4           1.06   88.9      1184     646
-Lambda = 46 J                4 of 4           1.07   89.6      1964    1461
-c = 320                      4 of 4           1.49   89.7       939     377
-h_c = 5                      3 of 4           1.80   89.1      5000     571
-h_c = 82                     4 of 4           0.83   88.4       920     995
-rho reversed                 4 of 4           0.67   88.4      1182     643
-rho +20 %                    4 of 4           0.97   89.5      1341     694
-rho -20 %                    4 of 4           1.37   88.3      1167     643
-window 12 K                  3 of 4           0.97   88.3      5000     605
-sigma_ctl -10 %              4 of 4           1.58   89.7      2171     876
-sigma_ctl +10 %              4 of 4           0.53   88.4      1311     695
-sigma_ctl -20 %              0 of 4            nan   89.9      5000   12956
-sigma_ctl +20 %              1 of 4           1.43   88.3      5000    3236
-ambient 15 C                 4 of 4           0.92   88.8      1079     875
-ambient 26 C                 4 of 4           1.41   88.9      2371     604
+case                 targets reached max hold err %   Tmax  time [s]   E [J] homing [s]
+nominal                      4 of 4           0.80  106.3      1174     634        767
+Lambda = 46 J                4 of 4           0.99  103.1      1957    1466        536
+c = 320                      4 of 4           1.31  122.1       924     373        621
+h_c = 5                      2 of 4           0.99  107.5      5000     900       4144
+h_c = 82                     4 of 4           0.74  105.4       899     979        357
+rho reversed                 4 of 4           0.51  102.8      1191     632        763
+rho +20 %                    4 of 4           0.76  107.9      1290     674        767
+rho -20 %                    4 of 4           0.95  105.0      1177     634        771
+window 12 K                  0 of 4            nan  104.7         0       0        929   homing FAULT: preload_too_low
+sigma_ctl -10 %              4 of 4           0.94  106.5      1172     633        768
+sigma_ctl +10 %              4 of 4           0.89  106.6      1165     632        768
+sigma_ctl -20 %              4 of 4           0.91  106.5      1168     632        768
+sigma_ctl +20 %              4 of 4           0.75  106.8      1177     635        768
+ambient 15 C                 4 of 4           1.37  106.7       704     676        549
+ambient 26 C                 0 of 4            nan  106.7         0       0       1651   homing FAULT: preload_too_low
+ambient 26 C, preload 290         4 of 4           0.87  112.6       970     639        667
+safety monitor: no trips in any run

@@ -9,3 +9,4 @@ ext: ambient +4 K from onset                 87.0       +1.07   39.8     93
 ext: ambient +8 K from onset                130.2       +0.94   40.3     58   
 con: air flow x3 from 0 s                    11.0       -1.61   94.3     56   
 con: ambient -10 K                            6.9       +0.00   94.8     34   
+safety monitor: no trips in any run

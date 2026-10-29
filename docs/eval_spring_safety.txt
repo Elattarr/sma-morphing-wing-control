@@ -1,8 +1,25 @@
-== SAFETY ==
-true A_f (end of recovery, highest stress): 94.4 C; controller over-temperature limit: 101.8 C
-case                                        Tmax true  final r  I at end  note
-thermocouple open (reads 0 C)                  1817.7    1.000      35.0  NO INDEPENDENT PROTECTION: needs a hardware limit
-displacement sensor stuck at start              103.2    1.000       0.0  
-true stress 300, controller assumes 250         102.6    1.000       0.0  
-true stress 350, controller assumes 250         102.9    0.135       0.0  
-current limit: 35 A (clip in plant and controller); repeated cycles: identical by construction (MEFF has no drift)
+== SAFETY: injected faults, with and without the independent monitor ==
+controller over-temperature limit 101.8 C, absolute 125 C; monitor hard trip 130 C
+fault (second channel T2 present)    at [s] | no monitor: Tmax after |                   stopped by   t [s] Tmax after  result
+thermocouple open (reads 0 C)            20 |                  138.4 |                  tc_disagree    20.1       45.0  ok
+thermocouple open (reads 0 C)           290 |                   33.6 |                  tc_disagree   290.1       33.6  ok
+thermocouple frozen                      20 |                  124.2 |                  tc_disagree    27.0       57.0  ok
+thermocouple frozen                     290 |                  117.8 |                  tc_disagree   725.2       58.8  ok
+thermocouple reads 30 K low              20 |                  112.6 |                  tc_disagree    20.1       45.0  ok
+thermocouple reads 30 K low             290 |                   33.6 |                  tc_disagree   290.1       33.6  ok
+position sensor frozen                   20 |                  122.1 | homing: no_motion_on_heating    71.3      122.1  ok
+position sensor frozen                  250 |                  126.4 |                        stall   372.2      108.1  ok
+controller hangs, current frozen         20 |                  222.1 |                     watchdog    20.5       45.7  ok
+controller hangs, current frozen        250 |                   34.6 |                     watchdog   250.5       34.6  ok
+power stage stuck on                     20 |                 2090.6 |             current_mismatch    21.1       63.1  ok
+power stage stuck on                    290 |                 2090.6 |             current_mismatch   291.1       55.5  ok
+wire contact fails (R x3)                20 |                  111.5 |                   resistance    20.1       45.0  ok
+wire contact fails (R x3)               290 |                   94.9 |                   resistance   653.0       33.6  ok
+fault (single thermocouple, envelope check only)
+thermocouple open (reads 0 C) [no T2]     20 |                  138.4 |                 tc_reads_low    20.1       45.0  ok
+thermocouple open (reads 0 C) [no T2]    290 |                   33.6 |                 tc_reads_low   290.1       33.6  ok
+thermocouple frozen [no T2]              20 |                  124.2 |                 tc_reads_low    48.0      100.9  ok
+thermocouple frozen [no T2]             290 |                  117.8 |                 tc_reads_low   730.1       94.7  ok
+thermocouple reads 30 K low [no T2]      20 |                  112.6 |         homing: no_extension   202.1      112.6  ok
+thermocouple reads 30 K low [no T2]     290 |                   33.6 |                 tc_reads_low   290.1       33.6  ok
+20 of 20 fault runs stopped below the trip temperature + 10 K; fail-safe state = power off, wire extends under the bias spring

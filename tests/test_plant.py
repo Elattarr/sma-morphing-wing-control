@@ -70,14 +70,21 @@ def test_map_matches_ansys_within_0p25K():
 
 @pytest.mark.parametrize("I, E_thesis, tol", [(35, 173, 0.03), (26, 182, 0.04), (19, 199, 0.06)])
 def test_heating_energy_close_to_thesis_cases(I, E_thesis, tol):
-    # thesis cases were computed with c = 320 J/kg/K and h = 81.9 W/m2/K, so the test pins those values
+    # Thesis heating cases (heated to 73 C = embedded-wire end temperature: A_f shifted by about 145 MPa x 0.146 K/MPa).
+    # They were computed with c = 320 J/kg/K and h = 81.9 W/m2/K, so the test pins those values. Heat-balance check only.
     w, _ = heat_to(73.0, I, SMAParams(Imax=50, noise_mm=0, c=320.0, h=81.9))
     assert w.E_joule == pytest.approx(E_thesis, rel=tol)
 
 
-def test_default_parameters_energy_to_73C_is_physically_consistent():
-    """Defaults (c = 837, h = 30): sensible 102 J + latent 98 J + losses, so > 200 J at 35 A."""
+def test_standalone_heating_energy_to_Af_from_35C():
+    """Standalone wire: heating from 35 C (after unloading) to A_f ~ 52 C.
+    Defaults c = 837, h = 30: sensible 58 J + latent 98 J = 156 J plus small losses."""
     p = SMAParams(Imax=50, noise_mm=0)
-    w, _ = heat_to(73.0, 35)
-    floor = p.heat_capacity * (73.0 - 22.0) + p.latent_total
-    assert floor < w.E_joule < 1.15 * floor
+    for I in (35, 26, 19):
+        w = SMAWire(p, T0=35.0)
+        t = 0.0
+        while w.T < 52.0 and t < 100:
+            w.step(I, 0.001); t += 0.001
+        floor = p.heat_capacity * (52.0 - 35.0) + p.latent_total
+        assert w.r == pytest.approx(1.0, abs=1e-3)
+        assert floor < w.E_joule < 1.07 * floor

@@ -6,7 +6,7 @@ the wire cannot extend by itself; the controller only drives the wire upward (ta
 (power off + external reset) is outside the controller. No homing (it would use the stroke up). Windows come from the model
 (A_s 51.2, A_f 54.1 C), the controller adapts its temperature limit when the real window is wider or higher.
 
-TE deflection is mapped linearly from the wire recovery r:  TE = r * 42.2 mm  [ASSUMED: linear, from ANSYS force/deflection 1.15 N/mm].
+TE columns use the mean TE travel of the ANSYS Up 40 run, 35.6 mm (from the preloaded -6.6 to -42.2 mm), per unit r; the true map is concave (te_map.py).
 
 usage:  python scripts/evaluate_heatonly.py steps|ramps|disturb|robust|sensors|struct [figure_dir]
 """
@@ -20,7 +20,7 @@ import evaluate_controller as ev
 from sma_control.cycle_controller import CycleController, cfg_heat_only
 from sma_control.spring import BiasSpring
 
-TE_MM = 42.2                                   # thesis Up 40 mm, final TE deflection [mm] for r = 1
+TE_MM = 35.6                                   # TE travel [mm] between r = 0 (preloaded, -6.6) and r = 1 (-42.2), ANSYS Up 40
 UP = (0.25, 0.5, 0.75, 1.0)
 K_CTL = [6.36]                                 # structure stiffness the CONTROLLER assumes [N/mm] (the plant keeps 6.36)
 
@@ -90,7 +90,8 @@ def cases():
             ("rho +20 %", dict(p_true=replace(ev.NOM, rho_eM=0.96e-6, rho_eA=1.2e-6))), ("rho -20 %", dict(p_true=replace(ev.NOM, rho_eM=0.64e-6, rho_eA=0.8e-6))),
             ("preload ctl 2 -> 30 MPa", dict(sigma_ctl=30.0)), ("preload true 30 MPa", dict(sigma_true=30.0, sigma_ctl=2.2)),
             ("spread 2 K", dict(struct=dict(spread_K=2.0))), ("spread 5 K", dict(struct=dict(spread_K=5.0))),
-            ("spread 2 K + 25 % tail to 20 K (ANSYS-like)", dict(struct=dict(spread_K=2.0, tail_frac=0.25, tail_K=20.0))),
+            ("spread 2 K + 25 % tail to 20 K (severe, NOT the data)", dict(struct=dict(spread_K=2.0, tail_frac=0.25, tail_K=20.0))),
+            ("ANSYS Up 40 fit (0.4 K, 5 % tail to 5 K)", dict(struct=dict(spread_K=0.4, tail_frac=0.05, tail_K=5.0))),
             ("ambient 15 C", dict(T_amb=15.0)), ("ambient 32 C", dict(T_amb=32.0))]
 
 

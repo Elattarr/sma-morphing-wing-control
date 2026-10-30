@@ -1,20 +1,21 @@
 == HEAT-ONLY: PARAMETER ERRORS, sequence r = 0.25 -> 0.5 -> 0.75 -> 1.0 (controller from nominal numbers) ==
 case                                           reached max hold err %   [mm]   Tmax  time [s]   E [J]
-nominal                                          4 of 4           0.17   0.07   54.3        66     268
-Lambda = 46 J                                    4 of 4           0.83   0.35   54.3        65     215
-c = 320                                          4 of 4           0.46   0.19   54.4        72     204
-h_c = 5                                          4 of 4           0.27   0.11   54.2        59     216
-h_c = 82                                         4 of 4           0.30   0.13   54.2        73     384
-rho reversed                                     4 of 4           0.35   0.15   54.2        66     267
-rho +20 %                                        4 of 4           0.43   0.18   54.4        66     268
-rho -20 %                                        4 of 4           0.18   0.08   54.2        66     268
-preload ctl 2 -> 30 MPa                          4 of 4           0.34   0.15   54.3        63     265
-preload true 30 MPa                              4 of 4           0.21   0.09   58.2        71     295
-spread 2 K                                       4 of 4           0.62   0.26   58.0        63     277
-spread 5 K                                       3 of 4           0.51   0.21   63.2      1500     293
-spread 2 K + 25 % tail to 20 K (ANSYS-like)      3 of 4           0.23   0.10   70.1      1500     330
-ambient 15 C                                     4 of 4           0.28   0.12   54.1        69     309
-ambient 32 C                                     4 of 4           0.28   0.12   54.3        63     212
-controller stiffness x0.5                        4 of 4           0.42   0.18   54.4        66     268
-controller stiffness x2.0                        4 of 4           0.43   0.18   54.1        66     267
+nominal                                          4 of 4           0.17   0.06   54.3        66     268
+Lambda = 46 J                                    4 of 4           0.83   0.29   54.3        65     215
+c = 320                                          4 of 4           0.46   0.16   54.4        72     204
+h_c = 5                                          4 of 4           0.27   0.09   54.2        59     216
+h_c = 82                                         4 of 4           0.30   0.11   54.2        73     384
+rho reversed                                     4 of 4           0.35   0.13   54.2        66     267
+rho +20 %                                        4 of 4           0.43   0.15   54.4        66     268
+rho -20 %                                        4 of 4           0.18   0.06   54.2        66     268
+preload ctl 2 -> 30 MPa                          4 of 4           0.34   0.12   54.3        63     265
+preload true 30 MPa                              4 of 4           0.21   0.08   58.2        71     295
+spread 2 K                                       4 of 4           0.62   0.22   58.0        63     277
+spread 5 K                                       3 of 4           0.51   0.18   63.2      1500     293
+spread 2 K + 25 % tail to 20 K (severe, NOT the data)     3 of 4           0.23   0.08   70.1      1500     330
+ANSYS Up 40 fit (0.4 K, 5 % tail to 5 K)         4 of 4           0.70   0.25   56.5        65     274
+ambient 15 C                                     4 of 4           0.28   0.10   54.1        69     309
+ambient 32 C                                     4 of 4           0.28   0.10   54.3        63     212
+controller stiffness x0.5                        4 of 4           0.42   0.15   54.4        66     268
+controller stiffness x2.0                        4 of 4           0.43   0.15   54.1        66     267
 safety monitor: no trips in any run

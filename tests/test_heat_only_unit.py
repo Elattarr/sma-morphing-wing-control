@@ -139,7 +139,9 @@ def test_motion_detection_ignores_noise_spikes_before_the_window():
 
 def test_te_map_roundtrip_and_validation():
     m = TEMap()
-    assert m.r_to_te(0.5) == pytest.approx(-21.1) and m.te_to_r(-31.65) == pytest.approx(0.75)
+    assert m.r_to_te(0.0) == pytest.approx(-6.632) and m.r_to_te(1.0) == pytest.approx(-42.239) and m.r_to_te(0.5) == pytest.approx(-20.748)
+    assert m.r_to_te(0.3) > -0.3 * 35.6 - 6.632                       # concave: TE lags the wire end (ANSYS), above the straight line
+    assert m.te_to_r(m.r_to_te(0.75)) == pytest.approx(0.75, abs=1e-6)
     m2 = TEMap(((0.0, 0.0), (0.5, -30.0), (1.0, -42.2)))
     for r in (0.0, 0.2, 0.5, 0.9, 1.0):
         assert m2.te_to_r(m2.r_to_te(r)) == pytest.approx(r)
@@ -163,9 +165,9 @@ def test_io_loop_runs_a_move_in_millimetres_with_the_monitor():
     io, mon, st, te = SimRig(g), SafetyMonitor(P, TS), LoopState(), TEMap()
     mon.arm(22.0, 22.0)
     for _ in range(int(40 / TS)):
-        run_step(io, g.ctl, mon, -21.1, te, st)
+        run_step(io, g.ctl, mon, te.r_to_te(0.5), te, st)
         g.w.step(io.I, TS, 22.0, 1.0)
-    assert abs(te.r_to_te(g.r()) - (-21.1)) < 1.0 and not mon.tripped and st.fault is None
+    assert abs(te.r_to_te(g.r()) - te.r_to_te(0.5)) < 1.0 and not mon.tripped and st.fault is None
 
 
 def test_safety_catches_a_frozen_thermocouple_and_not_a_noisy_one():

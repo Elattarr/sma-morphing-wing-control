@@ -1,9 +1,10 @@
-"""Map between the wire recovery r (0 = extended ... 1 = fully recovered) and the trailing-edge deflection of the wing in mm.
+"""Map between the wire recovery r (0 = extended ... 1 = fully recovered, measured at the wire end) and the trailing-edge deflection in mm.
 
-The controller works in r. The wing setpoint is given in mm, so a map is needed. Default: linear, 0 -> 0 mm, 1 -> -42.2 mm (thesis ANSYS,
-Up 40 mm run; the sign is the ANSYS directional deformation, negative = TE down). [ASSUMED] linear: the thesis run gave a straight
-force / deflection line of about 1.15 N/mm at the TE, but the deflection / recovery relation of the real wing (contact, CFRP, friction) is not
-measured. Replace the points with a calibration (several (r, TE) pairs from the bench) with `TEMap(points)`; piecewise linear in between.
+Default points: ANSYS Up 40 mm run (2026-10-30, heating 22 -> 80 C, docs/ansys_up40_recovery.csv). TE deflection is the ANSYS directional deformation
+(negative = TE down) in the coordinates of that run: r = 0 is the PRELOADED state at 22 C (-6.63 mm, not 0), r = 1 is -42.24 mm, so the useful travel is 35.6 mm.
+r is the recovery of the wire-end displacement (mean of min / max of the end-of-wire output, stroke 6.48 mm). The relation is concave: TE lags the wire end
+by up to 13 % of the stroke at r = 0.2-0.4 (ANSYS data), so the old linear map was wrong in the middle of the stroke.
+[ASSUMED] the same relation holds for another load case or wing; replace the points with a bench calibration, `TEMap(points)`, piecewise linear in between.
 """
 from dataclasses import dataclass
 import numpy as np
@@ -11,7 +12,8 @@ import numpy as np
 
 @dataclass
 class TEMap:
-    points: tuple = ((0.0, 0.0), (1.0, -42.2))       # (r, TE mm), r strictly increasing
+    points: tuple = ((0.0, -6.632), (0.05, -7.155), (0.1, -8.144), (0.2, -10.537), (0.3, -13.252), (0.4, -16.449), (0.5, -20.748),
+                      (0.6, -25.053), (0.7, -29.379), (0.8, -33.676), (0.9, -38.065), (0.95, -40.248), (1.0, -42.239))       # (r, TE mm), r strictly increasing
 
     def __post_init__(self):
         r = [p[0] for p in self.points]

@@ -64,6 +64,9 @@ class CycleCfg:
     hold_step: float = 2.0       # K  hold temperature raised (or lowered) by this much when the held position drifts
     hold_drift: float = 0.01     # drift in r (filtered) that triggers a hold-temperature step
     hold_below_As: float = 10.0  # K  the hold temperature never goes above  A_s - this
+    heat_only: bool = False      # one-way actuator (no return stroke): never enter 'down', hold = power off (position is held by the wire itself)
+    creep_rate: float = 1.0      # K/s  heat-only: temperature goal ramp after the pre-heat, until the first motion is seen
+    creep_detect: float = 0.01   # recovered fraction that counts as 'the wire has started to move' (hands over to the position loop)
     overshoot_exit: bool = True  # leave up/down when the position overshoots the target by more than db_start (hold then corrects it)
     sigma_unc: float = 30.0      # MPa, assumed uncertainty of the bias stress: widens the over-temperature limit by 0.146 K/MPa
 
@@ -232,6 +235,15 @@ def cfg_for_wire(p: SMAParams, **overrides) -> CycleCfg:
     return CycleCfg(**scaled)
 
 
+def cfg_heat_only(p: SMAParams, **overrides) -> CycleCfg:
+    """preset for a one-way actuator (heating only, no return stroke): no 'down' mode, hold = power off, pre-heat stops 3 K below A_s and a
+    1 K/s temperature creep finds the real start of the window, then a slow (0.1/s) and stiff (Kr 8/s) position loop. Found in simulation
+    on the 2 mm thesis wire; NOT validated, re-tune on the bench (an overshoot cannot be undone in a one-way system)."""
+    d = dict(heat_only=True, margin_up=3.0, creep_rate=1.0, creep_detect=0.01, Kr=8.0, drdt_up=0.1)
+    d.update(overrides)
+    return cfg_for_wire(p, **d)
+
+
 class CycleController:
     def __init__(self, p: SMAParams, sigma: float, cfg: CycleCfg | None = None, K_spring: float = 0.0):
         """sigma = stress with the wire fully extended (the whole stress if K_spring = 0); K_spring in MPa per unit strain"""
@@ -265,6 +277,7 @@ class CycleController:
         self.T_peak = -1e9
         self.r_hold_ref = 0.0
         self.cal = None
+        self.Tg = None
         self.T_motion = self.Tfs + np.sqrt(2.0 / 3.0) / M.beta * self.c.sigma_unc + 2.0   # highest T where motion may start the down loop
 
     def apply_calibration(self, cal: "Calibration"):
@@ -328,7 +341,7 @@ class CycleController:
         self.r_f = self.r_est                                   # restart the filter at the current position
         self.rf_entry = self.r_f
         self.r_hold_ref, self.T_peak = self.r_f, -1e9
-        self.mode, self.in_loop, self.Tcmd = mode, False, None
+        self.mode, self.in_loop, self.Tcmd, self.Tg = mode, False, None, None
         self.I_a = self.I_b = 0.0
 
     # ---------------------------------------------------------------- one control step
@@ -344,14 +357,26 @@ class CycleController:
         if self.mode == "hold":
             if r_target > self.r_f + c.db_start:
                 self._enter("up")
-            elif r_target < self.r_f - c.db_start:
+            elif r_target < self.r_f - c.db_start and not c.heat_only:
                 self._enter("down")
         P = 0.0
         # at a bound (r = 0 or 1) the estimate cannot cross it: a wrong sigma biases r_est by 0.07 % strain per 25 MPa,
         # so accept 0.03 there; inside the range use the tight tolerance
         tol = c.db_done if 0.03 < r_target < 0.97 else 0.03
         if self.mode == "up":
-            if not self.in_loop and T_meas < self.T_pre - 0.1 and r < self.r_entry + c.db_start:
+            pre = not self.in_loop and r < self.r_entry + (c.creep_detect if c.heat_only else c.db_start)
+            if c.heat_only and pre and (self.Tg is not None or T_meas >= self.T_pre - 0.1):
+                # heat-only: slow temperature creep from just below A_s until the wire moves; the window position is not trusted,
+                # and the position loop must not wind up on an error it cannot yet reduce
+                if self.Tg is None:                                    # start from the measured temperature with an empty integrator:
+                    self.Tg, self.Tcmd, self.I_a = T_meas, T_meas, 0.0   # the pre-heat integrator would keep heating at ~20 K/s into the window
+                self.Tg += c.creep_rate * c.Ts
+                if T_meas > self.T_lim - 1.0:
+                    self.T_lim = min(self.T_lim + c.T_limit_expand_rate * c.Ts, c.T_abs_max)
+                P = self._temp_loop(self.Tg, T_meas, Q, P_max)
+                if T_meas > self.T_lim:
+                    P = 0.0
+            elif pre and T_meas < self.T_pre - 0.1:
                 P = self._temp_loop(self.T_pre, T_meas, Q, P_max)
             else:
                 P = self._pos_loop(r_target, r, Q, P_max, c.drdt_up, c.Kr, c.Ki_r)
@@ -383,7 +408,7 @@ class CycleController:
                 self.T_hold, self.r_hold_ref = min(self.T_hold + c.hold_step, self.T_hold_max), self.r_f
             elif d > c.hold_drift:                                    # creeping back: lower again, never below the model value
                 self.T_hold, self.r_hold_ref = max(self.T_hold - c.hold_step, self.T_safe), self.r_f
-            P = self._temp_loop(self.T_hold, T_meas, Q, P_max, c.Kp_hold, c.Ki_hold)
+            P = 0.0 if c.heat_only else self._temp_loop(self.T_hold, T_meas, Q, P_max, c.Kp_hold, c.Ki_hold)
         if T_meas > self.T_lim or T_meas > c.T_abs_max:                    # over-temperature cut-off in every mode
             P = 0.0
         return float(np.sqrt(P / R))

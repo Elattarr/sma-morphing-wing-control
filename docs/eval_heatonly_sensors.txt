@@ -1,0 +1,10 @@
+== HEAT-ONLY: SENSORS, sequence r = 0.25 -> 0.5 -> 0.75 -> 1.0 ==
+case                                   reached max hold err %   [mm]   Tmax  time [s]
+nominal (0.1 K, 0.02 mm)                 4 of 4           0.51   0.21   54.3        65
+T noise 0.5 K                            4 of 4           0.33   0.14   54.3        63
+displacement noise 0.1 mm                0 of 4            nan    nan   52.3      1500
+displacement quantised 0.05 mm           0 of 4            nan    nan   52.1      1500
+thermocouple lag 1 s                     4 of 4           0.52   0.22   54.3        55
+thermocouple lag 3 s                     4 of 4           0.56   0.24   54.5        55
+all: 0.3 K, 0.05 mm, q 0.02, lag 1 s     0 of 4            nan    nan   52.2      1500
+safety monitor: no trips in any run

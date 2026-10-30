@@ -11,7 +11,7 @@ Reference configuration (what the evaluation assumed): 0.5 mm wire, 200 mm free 
 | Item | Requirement | Why (number from the evaluation) |
 |---|---|---|
 | Wire | 0.5 mm, MEFF constants of specimen C; 2 mm is impractical (needs 660–790 N preload to return at ambient) | `spring.py`: return at ambient needs σ_ext ≥ 211 MPa |
-| Preload / spring | σ_ext ≥ 290 MPa at the extended end; spring rate ≈ 1.25 N/mm (measure it) | at 250 MPa a spread ≥ 3 K wire never returns fully; homing refuses (`preload_too_low`); at 290 MPa all structural cases pass |
+| Preload / spring | σ_ext ≥ 290 MPa at the extended end; spring rate ≈ 1.25 N/mm (measure it) | at 250 MPa a spread ≥ 3 K wire never returns fully; homing refuses (`preload_too_low`); at 290 MPa spreads up to 3 K (and 25 % tail to 20 K) pass, a 5 K spread is still refused |
 | Current source | 0–3 A, ≥ 12 bit, hardware limit at 3 A independent of software | 3 A is [ASSUMED] for 0.5 mm; contraction in ≈ 6 s needs ≈ 2.7 A |
 | Current / voltage measurement | I ±0.5 %, V at the wire (4-wire), both at ≥ 20 Hz | monitor checks resistance and current mismatch; identification needs R to 1 % |
 | Control thermocouple T1 | type K, ≤ 0.1 mm, bonded at mid-length, lag ≤ 1 s, noise ≤ 0.3 K | evaluated up to 0.5 K noise and 3 s lag (4/4 targets) |

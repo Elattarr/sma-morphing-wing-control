@@ -27,7 +27,7 @@ Date of this status: 2026-10-30. Scope: free one-way wire pulled back by a bias 
 
 - A single thermocouple that freezes is **not** caught by the envelope check alone on the 0.5 mm build wire (2 of 2 runs not stopped, Tmax 116.7 C, `eval_thin_safety.txt`); it is caught on the 2 mm wires. With the independent second channel all 14 two-channel fault runs stop. T2 is mandatory.
 - Thermocouple lag is identified poorly when it is small (0.1 s true -> 0.047 s fitted, 0.5 s -> 0.45 s); m c, h S, R, m Lambda are within 1 %. The lag only enters the monitor through a fixed bound (4 s), so this does not matter for safety.
-- The preload must cover the transformation-temperature spread of the wire: at 250 MPa a spread of 3 K or more (and a 12 K window) never returns fully and homing refuses; 290 MPa covers all structural cases tested.
+- The preload must cover the transformation-temperature spread of the wire: at 250 MPa a spread of 3 K or more (and a 12 K window) never returns fully and homing refuses; 290 MPa covers spreads up to 3 K and the tail cases; a 5 K spread (window about 16 K wider) is still refused (`eval_thin_struct_preload290.txt`). A wire with that spread needs a higher preload, which also raises the peak temperature (122 C already reached of 125 C).
 - Ambient 26 C at 250 MPa leaves 1.7 K return margin and is refused; at 290 MPa it works.
 - Homing costs 200-900 s per power-up (0.5 mm wire; up to 3400 s for a 2 mm wire at h = 5) and heats the wire to A_f + ~17 K; peak temperature reaches 122 C of the 125 C limit for some alloys and wide windows.
 - Single-precision C: threshold decisions can shift by one sample (accumulated `still += Ts`); tolerable, but use integer sample counters if bit-level agreement is wanted.

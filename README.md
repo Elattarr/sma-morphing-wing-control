@@ -64,7 +64,7 @@ ctl = CycleController(P, 2.2, cfg_heat_only(P, Ts=0.05), K_spring=BiasSpring(2.2
 ## Results in short (simulation)
 
 - Full stroke: settles in 14.5 s, overshoot below 1 %, steady-state error below 0.4 %, wire peak 54–57 °C, about 220 J.
-- 14 of 16 parameter-error cases reach all four targets (0.25 / 0.5 / 0.75 / 1.0 of the stroke), including a plant fitted to the ANSYS recovery curve.
+- 16 of 18 parameter-error cases reach all four targets (0.25 / 0.5 / 0.75 / 1.0 of the stroke), including a plant fitted to the ANSYS recovery curve.
 - Needs displacement noise of about 0.03 mm or better on the wire stroke; fails at 0.1 mm.
 - All 30 injected safety faults end safe.
 

@@ -64,7 +64,7 @@ What the runs show (default preset, regenerated 2026-10-30 after the last fixes;
 - Steps from r = 0: full 42.2 mm settles in 14.5 s, overshoot ≤ 0.7 %, steady-state error ≤ 0.3 %, peak wire temperature 54.2 °C, about 220 J per full stroke.
 - Staircase 0.25 → 1.0: 4/4, hold error 0.2 % nominal. Disturbances (air ×3, ×0.5, ambient ±10 K) change the final position by ≤ 0.4 %.
 - Ramps 0 → 1: RMS error 6.7 % (20 s), 2.4 % (60 s), 1.8 % (180 s and 600 s); max error 26 % on the 20 s ramp (the loop is deliberately slow: reference rate 0.1/s).
-- Parameter errors: 14 of 16 cases reach 4/4 (worst hold error 0.83 %), including the plant fitted to the ANSYS Up 40 data (hold error 0.70 %, Tmax 56.5 °C). Two reach 3/4: window spread 5 K, and spread 2 K + 25 % tail to 20 K. Both are far wider than the ANSYS data (spread 0.4 K, 5 % tail over 5 K), so they are stress tests, not the expected case.
+- Parameter errors: 16 of 18 cases (incl. nominal and two stiffness cases) reach 4/4 (worst hold error 0.83 %), including the plant fitted to the ANSYS Up 40 data (hold error 0.70 %, Tmax 56.5 °C). Two reach 3/4: window spread 5 K, and spread 2 K + 25 % tail to 20 K. Both are far wider than the ANSYS data (spread 0.4 K, 5 % tail over 5 K), so they are stress tests, not the expected case.
 - Sensors: 6 of 7 pass (noise 0.5 K, lag 3 s, 0.05 mm quantisation, "all" combined). Displacement noise 0.1 mm fails (0 of 4). Measured on a cold wire:
   false motion detection at 0.02 mm noise 0/10 seeds, 0.03 mm 1/20, 0.05 mm 4/20. Requirement for the bench: displacement noise ≲ 0.02–0.03 mm on the wire stroke
   (about 0.4 % of 6.5 mm); LVDT/laser on the wire end, not a TE camera. Motion detection defaults (creep_confirm 3, fast_detect 3.0) were chosen by a sweep over the

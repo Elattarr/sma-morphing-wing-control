@@ -60,18 +60,34 @@ Plant: 2 mm × 200 mm NiTi, structure only (6.4 N/mm at the wire, 7 N = 2.2 MPa 
 position loop Kr 8/s, reference rate 0.1/s); harness `scripts/evaluate_heatonly.py`; results `docs/eval_heatonly_*.txt`, `docs/figs_wing/heatonly_*.png`.
 All of it is model vs model (verification), nothing validated.
 
-What the runs show (nominal numbers, clean sensors): full 42.2 mm in about 14 s settle, overshoot ≤ 2 % of stroke on steps,
-staircase 0.25 → 1.0 reached 4/4 with hold error ≤ 0.6 % (0.25 mm TE), peak wire temperature 54.3 °C, about 220 J per full stroke,
-disturbances (air flow ×3, ×0.5, ambient ±10 K) do not change the final position (≤ 0.8 %). Slow ramps track with RMS 2.1–2.5 % (about 1 mm TE).
+What the runs show (default preset, regenerated 2026-10-30 after the last fixes; older numbers such as "14 of 17" are superseded):
+- Steps from r = 0: full 42.2 mm settles in 14.5 s, overshoot ≤ 0.7 %, steady-state error ≤ 0.3 %, peak wire temperature 54.2 °C, about 220 J per full stroke.
+- Staircase 0.25 → 1.0: 4/4, hold error 0.2 % nominal. Disturbances (air ×3, ×0.5, ambient ±10 K) change the final position by ≤ 0.4 %.
+- Ramps 0 → 1: RMS error 6.7 % (20 s), 2.4 % (60 s), 1.8 % (180 s and 600 s); max error 26 % on the 20 s ramp (the loop is deliberately slow: reference rate 0.1/s).
+- Parameter errors: 13 of 15 cases reach 4/4 (worst hold error 0.62 %). Two reach 3/4: window spread 5 K, and spread 2 K + 25 % tail to 20 K (the last target
+  needs more than the temperature cap allows; 63–70 °C). Treat these as real limits.
+- Sensors: 6 of 7 pass (noise 0.5 K, lag 3 s, 0.05 mm quantisation, "all" combined). Displacement noise 0.1 mm fails (0 of 4). Measured on a cold wire:
+  false motion detection at 0.02 mm noise 0/10 seeds, 0.03 mm 1/20, 0.05 mm 4/20. Requirement for the bench: displacement noise ≲ 0.02–0.03 mm on the wire stroke
+  (about 0.4 % of 6.5 mm); LVDT/laser on the wire end, not a TE camera. Motion detection defaults (creep_confirm 3, fast_detect 3.0) were chosen by a sweep over the
+  robust + sensor sets; they are the least invasive variant, not an optimum.
+- Safety fault injection (30 runs): all end below trip + 10 K; trips: watchdog, current_mismatch, resistance, tc_disagree, tc_reads_low, stall (frozen position sensor at 28 s).
+  NOT caught: a frozen thermocouple (6 of the 30 runs end without a trip; harmless in these runs only because the controller had already stopped heating, not because the monitor detects it).
+- Found and fixed while porting: the stall check counted a hot wire cooling at rest as "no motion" and tripped after the learner stop (wire overshoots to ~65 °C, then cools ≥ 8 s above
+  A_f,max + 5 K). The stall timer now only counts while I_meas > 0.3 A (Python and C).
 
-Limits found (do not hide them):
-- The first version stalled: after a small overshoot the old logic entered 'down', which does nothing in a one-way plant (deadlock). Fixed by `heat_only`.
-- An overshoot cannot be undone. The result is very sensitive to how the wire enters the window: with the old pre-heat (integrator still heating at ~20 K/s)
-  most parameter-error cases overshot by about 6 % (2.6 mm TE) at the first target. The creep phase removed that.
-- Parameter errors (Λ, c, h, ρ, ambient, controller stiffness ×0.5/×2, preload error 2 → 30 MPa in the controller): 14 of 17 cases reach all 4 targets,
-  worst hold error 1.6 %. Still failing: true preload 30 MPa vs 2.2 MPa assumed (first overshoot 2.4 %, just outside the 2 % band), and spreads of 5 K or a 25 % tail
-  to 20 K (the last target needs more than the temperature cap allows; 70–75 °C, ~3 kJ).
-- A tuning change that looked better (creep_detect 0.03) made 6 of the parameter cases worse; the controller is tuned at the edge. Treat the gains as a starting point for the bench.
-- Displacement sensor: noise of 0.1 mm (1.5 % of the wire's 6.5 mm stroke) or 0.05 mm quantisation makes it fail (0 of 4). Needs noise and resolution
-  below about 0.02 mm on the wire stroke (an LVDT or laser on the wire/end block, not a TE camera). Thermocouple lag 3 s and noise 0.5 K are tolerated.
-- Return/reset is not in the controller (power off, wait for the displacement sensor, timeout, re-home) and the CFRP surroundings are not modelled.
+Controller features added after the first version (all model-only): stop at the end of travel (no creeping to the temperature cap; sticky accepted target), one-point zero at
+power-up (assumes the wire is extended at start), first-stroke learner (two-point calibration from the measured end positions, A_s from the first motion, A_f from the
+temperature at the last motion), faults `position_dropped`, `stalled_short`, `reset_timeout`, `begin_reset()` re-arm, `rate_dn = 0` (a negative rate_dn had kept the
+reference above the target, so "done" never fired; this was the biggest single improvement).
+
+Support code: `te_map.py` (r ↔ TE mm, piecewise linear, default 0 → −42.2 mm, ASSUMED linear), `hardware_io.py` (`RigIO` interface + `run_step`: sensors → controller →
+safety monitor → permitted current and relay; untested on hardware), C port (`c/sma.c`, `c/replay.c`): bit-identical to Python in double precision on six heat-only replays
+(nominal, 4 K spread, noisy, 10 %-short wire with learner, two fault injections); float build agrees on decisions, current differs by ≤ 3e-3 A.
+Tests: `tests/test_heat_only_unit.py` (12 behaviour tests), `tests/test_heat_only.py`, heat-only cases in `tests/test_c_port.py`; full suite 111 passed, 1 xfailed.
+
+Still open / not validated:
+- Everything above is model vs model. The wire window in the model (A_s 51.2, A_f 54.1 °C at 15 MPa) is a reduced MEFF fit; ANSYS Up 40 shows deflection 99 % at 56 °C,
+  full −42.2 mm at 66.4 °C, local strain tail to 73–77 °C. The two disagree on the tail; I need the average-strain / wire end-displacement export from that run to fit it.
+- Supervisor A_s/A_f 51/69 °C vs ANSYS vs the model are not reconciled; thermal model is air convection, not CFRP; resin T_g vs 56–75 °C is unchecked.
+- Return mechanism is not in the controller (power off, wait for the displacement sensor, timeout, `begin_reset`); the wing/aero load that would extend the wire is not modelled.
+- Linear TE map and the one-point zero (wire extended at start) are assumptions.

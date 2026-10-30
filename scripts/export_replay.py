@@ -27,12 +27,14 @@ def g(x):
 def header(sigma_ctl):
     p, cfg = ev.NOM, ev.make_cfg()
     u, M = UniaxialMEFF(p.meff), p.meff
-    K = BiasSpring(sigma_ctl, ev.K_SPRING).K(p)
+    K = BiasSpring(sigma_ctl, getattr(ev, "K_CTL_OVERRIDE", None) or ev.K_SPRING).K(p)
     sc = SafetyCfg()
     cd = asdict(cfg)
     order = ["Ts", "Kp", "Ki", "k_soft", "dTdt_max", "margin_up", "margin_dn", "T_safe_above_fs", "Kr", "Ki_r", "Kr_dn", "Ki_r_dn", "tau_filt", "Kp_hold",
              "Ki_hold", "drdt_up", "dn_frac", "Kaw", "db_start", "db_done", "T_amb_est", "T_limit_above_Af", "T_abs_max", "T_limit_expand_rate",
-             "learn_margin", "hold_step", "hold_drift", "hold_below_As", "sigma_unc", "overshoot_exit"]
+             "learn_margin", "hold_step", "hold_drift", "hold_below_As", "sigma_unc", "overshoot_exit",
+             "heat_only", "creep_confirm", "creep_rate", "creep_detect", "q_tau", "approach_gain", "approach_span", "approach_min_rate", "fast_detect",
+             "creep_pcap", "settle_dr", "settle_s", "full_min", "near_tol", "drop_tol", "reset_r", "reset_still_s", "reset_timeout"]
     so = ["T_trip", "T_disagree", "T_disagree_dyn", "h_min", "h_max", "dT_amb", "band", "T_lat_lo", "stall_dT", "t_stall", "stall_frac", "I_tol_abs",
           "I_tol_rel", "t_I_mismatch", "R_tol", "mc_min_frac", "mc_max_frac", "lat_max_frac", "tc_lag_max"]
     lines = ["wire " + " ".join(g(x) for x in (p.L, p.A, p.surface, p.heat_capacity, p.latent_total, p.rho_eM, p.rho_eA, p.h, p.Imax)),
@@ -41,6 +43,19 @@ def header(sigma_ctl):
              "ctl " + g(sigma_ctl) + " " + g(K),
              "safety " + " ".join(g(getattr(sc, k)) for k in so) + f" {g(sc.T_range[0])} {g(sc.T_range[1])} {sc.n_freeze}"]
     return lines
+
+
+CTL_SEEN = []
+_mk = ev.make_ctl
+
+
+def _capture(*a, **k):
+    c = _mk(*a, **k)
+    CTL_SEEN.append(c)
+    return c
+
+
+ev.make_ctl = _capture
 
 
 def export(name, out_dir, fault=None, t_fault=0.0, use_T2=True, sigma_ctl=ev.SIG, **seq_kw):
@@ -58,7 +73,7 @@ def export(name, out_dir, fault=None, t_fault=0.0, use_T2=True, sigma_ctl=ev.SIG
     path = Path(out_dir) / f"{name}.txt"
     path.write_text("\n".join(lines) + "\n")
     cal = home.get("cal")
-    return path, dict(rows=len(guard.rows), cal=cal, home_fault=home["fault"], trip=TRIP_CODE.get(guard.mon.reason if guard.mon.tripped else None, -1),
+    return path, dict(rows=len(guard.rows), cal=cal, ctl=CTL_SEEN[-1] if CTL_SEEN else None, home_fault=home["fault"], trip=TRIP_CODE.get(guard.mon.reason if guard.mon.tripped else None, -1),
                       reached=len(seg))
 
 

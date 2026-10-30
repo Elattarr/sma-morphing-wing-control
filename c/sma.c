@@ -85,6 +85,7 @@ void sma_ctl_init(sma_ctl_t *ct, const sma_wire_t *w, const sma_meff_t *M, const
     ct->T_safe = ct->Tfs + cfg->T_safe_above_fs;
     sma_real mid = (sma_real)0.5 * (ct->Tfs + ct->Tfe);
     ct->rate_dn = cfg->dn_frac * w->h_conv * w->S * (mid - cfg->T_amb_est) / ct->m_eff;
+    if (cfg->heat_only) ct->rate_dn = 0;
     ct->mode = SMA_HOLD;
     ct->in_loop = 0;
     ct->Tcmd_valid = 0;
@@ -101,6 +102,10 @@ void sma_ctl_init(sma_ctl_t *ct, const sma_wire_t *w, const sma_meff_t *M, const
     ct->r_hold_ref = 0;
     ct->cal_valid = 0;
     ct->T_motion = ct->Tfs + a * cfg->sigma_unc + (sma_real)2.0;
+    ct->fault = SMA_C_OK;
+    ct->d_first_set = ct->resetting = ct->saturated = ct->r_q_valid = ct->d_valid = ct->n_detect = ct->Tg_valid = ct->T_start_valid = ct->settle_valid = 0;
+    ct->r_goal = -1; ct->T_ref = 0;
+    ct->r_max = ct->r_q = ct->d_q = ct->d_first = ct->Tg = ct->T_start_obs = ct->settle_ref = ct->t_settle = ct->t_reset = ct->t_rest = 0;
 }
 
 static void ctl_enter(sma_ctl_t *ct, sma_mode_t mode)
@@ -114,7 +119,11 @@ static void ctl_enter(sma_ctl_t *ct, sma_mode_t mode)
     ct->mode = mode;
     ct->in_loop = 0;
     ct->Tcmd_valid = 0;
+    ct->Tg_valid = 0;
     ct->I_a = ct->I_b = 0;
+    ct->n_detect = 0;
+    ct->settle_valid = 0;
+    ct->t_settle = 0;
 }
 
 void sma_ctl_apply_cal(sma_ctl_t *ct, const sma_cal_t *cal)
@@ -127,6 +136,7 @@ void sma_ctl_apply_cal(sma_ctl_t *ct, const sma_cal_t *cal)
     ct->m_eff = ct->w.mL + ct->w.mc * ct->W;
     sma_real mid = (sma_real)0.5 * (ct->Tfs + ct->Tfe);
     ct->rate_dn = c->dn_frac * ct->w.h_conv * ct->w.S * maxr(mid - c->T_amb_est, 1) / ct->m_eff;
+    if (c->heat_only) ct->rate_dn = 0;
     ct->T_pre = ct->As - c->margin_up;
     ct->T_safe = ct->Tfs + c->T_safe_above_fs;
     ct->T_limit = minr(ct->Af + c->T_limit_above_Af, c->T_abs_max);
@@ -143,17 +153,20 @@ sma_real sma_ctl_r_from_disp(const sma_ctl_t *ct, sma_real d_mm)
     if (ct->cal_valid) {
         sma_real m1 = sma_strain(&ct->st, 1), m0 = sma_strain(&ct->st, 0);
         eps = m1 + (eps - ct->cal.eps_ext) * (m0 - m1) / (ct->cal.eps_con - ct->cal.eps_ext);
+    } else if (ct->c.heat_only && ct->d_first_set) {
+        eps = eps - ct->d_first / (ct->w.L * (sma_real)1e3) + sma_strain(&ct->st, 1);       /* one-point zero at power-up */
     }
     return 1 - sma_xi_from_strain(&ct->st, eps);
 }
 
-static sma_real temp_loop(sma_ctl_t *ct, sma_real goal, sma_real T_meas, sma_real Q, sma_real P_max, sma_real Kp, sma_real Ki)
+static sma_real temp_loop(sma_ctl_t *ct, sma_real goal, sma_real T_meas, sma_real Q, sma_real P_max, sma_real Kp, sma_real Ki, sma_real rate_cap)
 {
     const sma_cfg_t *c = &ct->c;
+    sma_real dmax = (rate_cap < 0) ? c->dTdt_max : minr(rate_cap, c->dTdt_max);      /* rate_cap < 0: none */
     if (!ct->Tcmd_valid) { ct->Tcmd = T_meas; ct->Tcmd_valid = 1; }
-    sma_real step = clipr(c->k_soft * (goal - ct->Tcmd), -c->dTdt_max, c->dTdt_max) * c->Ts;
-    if (FABS(goal - ct->Tcmd) > c->dTdt_max / c->k_soft)
-        step = ((goal - ct->Tcmd) > 0 ? (sma_real)1 : (sma_real)-1) * c->dTdt_max * c->Ts;
+    sma_real step = clipr(c->k_soft * (goal - ct->Tcmd), -dmax, dmax) * c->Ts;
+    if (FABS(goal - ct->Tcmd) > dmax / c->k_soft)
+        step = ((goal - ct->Tcmd) > 0 ? (sma_real)1 : (sma_real)-1) * dmax * c->Ts;
     ct->Tcmd += step;
     sma_real e = ct->Tcmd - T_meas;
     sma_real P_un = Q + Kp * e + ct->I_a;
@@ -176,9 +189,58 @@ static sma_real pos_loop(sma_ctl_t *ct, sma_real r_target, sma_real r_meas, sma_
     return P;
 }
 
+/* ---- heat-only helpers (ports of CycleController._stopped / begin_reset / _reset_step) */
+static void ctl_stopped(sma_ctl_t *ct, sma_real r_target)
+{
+    const sma_cfg_t *c = &ct->c;
+    ct->r_goal = r_target;
+    if (r_target >= (sma_real)0.97 && ct->r_q >= c->full_min) {
+        ct->saturated = 1;
+        if (!ct->cal_valid && ct->d_valid) {
+            sma_real L = ct->w.L * (sma_real)1e3;
+            sma_cal_t cal;
+            cal.eps_ext = ct->d_first / L;
+            cal.eps_con = ct->d_q / L;
+            cal.As = ct->T_start_valid ? ct->T_start_obs : ct->As;
+            cal.Af = ct->T_ref;
+            cal.Tfs = ct->Tfs; cal.Tfe = ct->Tfe; cal.T_peak = ct->T_peak; cal.t_heat = 0; cal.t_cool = 0;
+            sma_ctl_apply_cal(ct, &cal);
+            ct->r_est = ct->r_f = ct->r_q = ct->r_max = sma_ctl_r_from_disp(ct, ct->d_q);
+        } else {
+            ctl_enter(ct, SMA_HOLD);
+        }
+    } else if (r_target < (sma_real)0.97 && ct->r_q >= r_target - c->near_tol) {
+        ctl_enter(ct, SMA_HOLD);
+    } else {
+        ct->fault = SMA_C_STALLED_SHORT;
+        ctl_enter(ct, SMA_HOLD);
+    }
+}
+
+void sma_ctl_begin_reset(sma_ctl_t *ct)
+{
+    if (ct->fault != SMA_C_OK && ct->fault != SMA_C_POSITION_DROPPED && ct->fault != SMA_C_RESET_TIMEOUT && ct->fault != SMA_C_STALLED_SHORT) return;
+    ct->fault = SMA_C_OK; ct->resetting = 1; ct->t_reset = 0; ct->t_rest = 0;
+}
+
+static sma_real ctl_reset_step(sma_ctl_t *ct)
+{
+    const sma_cfg_t *c = &ct->c;
+    ct->t_reset += c->Ts;
+    ct->t_rest = (ct->r_f < c->reset_r) ? ct->t_rest + c->Ts : 0;
+    if (ct->t_rest >= c->reset_still_s) {
+        ct->resetting = 0; ct->saturated = 0; ct->r_max = ct->r_f; ct->r_goal = -1;
+        ctl_enter(ct, SMA_HOLD);
+    } else if (ct->t_reset > c->reset_timeout) {
+        ct->fault = SMA_C_RESET_TIMEOUT; ct->resetting = 0;
+    }
+    return 0;
+}
+
 sma_real sma_ctl_step(sma_ctl_t *ct, sma_real r_target, sma_real T_meas, sma_real d_meas_mm)
 {
     const sma_cfg_t *c = &ct->c;
+    if (c->heat_only && !ct->d_first_set) { ct->d_first = d_meas_mm; ct->d_first_set = 1; }
     sma_real r = sma_ctl_r_from_disp(ct, d_meas_mm);
     ct->r_est = r;
     ct->r_f = ct->r_f_valid ? ct->r_f + c->Ts / c->tau_filt * (r - ct->r_f) : r;
@@ -187,23 +249,65 @@ sma_real sma_ctl_step(sma_ctl_t *ct, sma_real r_target, sma_real T_meas, sma_rea
     sma_real P_max = ct->w.Imax * ct->w.Imax * R;
     sma_real Q = ct->w.h_conv * ct->w.S * maxr(T_meas - c->T_amb_est, 0);
     ct->T_peak = maxr(ct->T_peak, T_meas);
+    if (c->heat_only) {
+        sma_real a = c->Ts / c->q_tau;
+        ct->r_q = ct->r_q_valid ? ct->r_q + a * (r - ct->r_q) : r;
+        ct->r_q_valid = 1;
+        ct->d_q = ct->d_valid ? ct->d_q + a * (d_meas_mm - ct->d_q) : d_meas_mm;
+        ct->d_valid = 1;
+        if (ct->fault != SMA_C_OK) return 0;
+        if (ct->resetting) return ctl_reset_step(ct);
+        ct->r_max = maxr(ct->r_max, ct->r_f);
+        if (ct->r_f < ct->r_max - c->drop_tol) { ct->fault = SMA_C_POSITION_DROPPED; return 0; }
+    }
     if (ct->mode == SMA_HOLD) {
-        if (r_target > ct->r_f + c->db_start) ctl_enter(ct, SMA_UP);
-        else if (r_target < ct->r_f - c->db_start) ctl_enter(ct, SMA_DOWN);
+        if (r_target > ct->r_f + c->db_start && (!c->heat_only || r_target > ct->r_goal + (sma_real)1e-9)) ctl_enter(ct, SMA_UP);
+        else if (r_target < ct->r_f - c->db_start && !c->heat_only) ctl_enter(ct, SMA_DOWN);
     }
     sma_real P = 0;
     sma_real tol = (r_target > (sma_real)0.03 && r_target < (sma_real)0.97) ? c->db_done : (sma_real)0.03;
     if (ct->mode == SMA_UP) {
-        if (!ct->in_loop && T_meas < ct->T_pre - (sma_real)0.1 && r < ct->r_entry + c->db_start) {
-            P = temp_loop(ct, ct->T_pre, T_meas, Q, P_max, c->Kp, c->Ki);
+        int moved, pre;
+        if (c->heat_only && !ct->in_loop) {
+            ct->n_detect = (ct->r_q > ct->r_entry + c->creep_detect) ? ct->n_detect + 1 : 0;
+            moved = ct->n_detect >= c->creep_confirm || r > ct->r_entry + c->fast_detect * c->creep_detect;
+            if (moved && !ct->T_start_valid) {
+                ct->T_start_obs = T_meas; ct->T_start_valid = 1;
+                ct->T_pre = minr(ct->T_pre, T_meas - c->margin_up);
+            }
+        } else {
+            moved = r >= ct->r_entry + c->db_start;
+        }
+        pre = !ct->in_loop && !moved;
+        if (c->heat_only && pre && (ct->Tg_valid || T_meas >= ct->T_pre - (sma_real)0.1)) {
+            if (!ct->Tg_valid) { ct->Tg = T_meas; ct->Tg_valid = 1; ct->Tcmd = T_meas; ct->Tcmd_valid = 1; ct->I_a = 0; }
+            ct->Tg += c->creep_rate * c->Ts;
+            if (T_meas > ct->T_lim - 1) ct->T_lim = minr(ct->T_lim + c->T_limit_expand_rate * c->Ts, c->T_abs_max);
+            P = minr(temp_loop(ct, ct->Tg, T_meas, Q, P_max, c->Kp, c->Ki, -1), Q + c->creep_pcap * ct->w.mc * c->creep_rate);
+            if (T_meas > ct->T_lim) P = 0;
+        } else if (pre && T_meas < ct->T_pre - (sma_real)0.1) {
+            sma_real cap = c->heat_only ? maxr(c->approach_min_rate, c->approach_gain * (ct->T_pre + c->approach_span - T_meas)) : (sma_real)-1;
+            P = temp_loop(ct, ct->T_pre, T_meas, Q, P_max, c->Kp, c->Ki, cap);
         } else {
             P = pos_loop(ct, r_target, r, Q, P_max, c->drdt_up, c->Kr, c->Ki_r);
             if (ct->in_loop && T_meas > ct->T_lim - 1 && r_target - ct->r_f > c->db_start)
                 ct->T_lim = minr(ct->T_lim + c->T_limit_expand_rate * c->Ts, c->T_abs_max);
             if (T_meas > ct->T_lim) P = 0;
+            if (c->heat_only && ct->in_loop && (P > 0 || T_meas > ct->T_pre)) {
+                if (!ct->settle_valid || FABS(ct->r_q - ct->settle_ref) > c->settle_dr) {
+                    ct->settle_ref = ct->r_q; ct->settle_valid = 1; ct->t_settle = 0; ct->T_ref = T_meas;
+                } else {
+                    ct->t_settle += c->Ts;
+                }
+                if (ct->t_settle >= c->settle_s && r_target - ct->r_f > c->db_done) {
+                    ctl_stopped(ct, r_target);
+                    return 0;
+                }
+            }
             if (FABS(ct->rref - r_target) < (sma_real)1e-9 && FABS(r_target - r) < tol) {
                 ct->T_lim = maxr(ct->T_limit_model, minr(ct->T_peak + c->learn_margin, c->T_abs_max));
                 ct->T_hold = minr(maxr(ct->T_hold, ct->T_safe + maxr(ct->T_peak - ct->Af, 0)), ct->T_hold_max);
+                ct->r_goal = r_target;
                 ctl_enter(ct, SMA_HOLD);
             } else if (c->overshoot_exit && ct->r_f > r_target + c->db_start) {
                 ctl_enter(ct, SMA_HOLD);
@@ -229,7 +333,7 @@ sma_real sma_ctl_step(sma_ctl_t *ct, sma_real r_target, sma_real T_meas, sma_rea
             ct->T_hold = maxr(ct->T_hold - c->hold_step, ct->T_safe);
             ct->r_hold_ref = ct->r_f;
         }
-        P = temp_loop(ct, ct->T_hold, T_meas, Q, P_max, c->Kp_hold, c->Ki_hold);
+        P = c->heat_only ? (sma_real)0 : temp_loop(ct, ct->T_hold, T_meas, Q, P_max, c->Kp_hold, c->Ki_hold, -1);
     }
     if (T_meas > ct->T_lim || T_meas > c->T_abs_max) P = 0;
     return SQRT(P / R);
@@ -495,7 +599,7 @@ sma_real sma_safety_step(sma_safety_t *s, sma_real I_cmd, sma_real I_meas, sma_r
     if (s->stroke_valid && have_d) {
         if (T1 > s->Af_max + c->stall_dT) {
             if (!s->d_hot_valid) { s->d_hot0 = d; s->t_hot = 0; s->d_hot_valid = 1; }
-            s->t_hot += dt;
+            if (I_meas > (sma_real)0.3) s->t_hot += dt;
             if (FABS(d - s->d_hot0) > c->stall_frac * s->stroke_mm) { s->d_hot0 = d; s->t_hot = 0; }
             if (s->t_hot > c->t_stall) safety_trip(s, SMA_S_STALL);
         } else {

@@ -131,7 +131,48 @@ def sec_sensors(fig=None):
         print(f"{name:36s} {s['reached']:>5d} of 4 {s['max_err']:14.2f} {s['max_err'] * TE_MM / 100:6.2f} {s['Tmax']:6.1f} {s['t_total']:9.0f}")
 
 
-SECTIONS = dict(steps=sec_steps, ramps=sec_ramps, disturb=sec_disturb, robust=sec_robust, sensors=sec_sensors)
+T_TRIP = 85.0                                  # K  independent hard trip for the embedded wire (controller cap 75 C): [ASSUMED] set from the resin Tg
+
+
+_new_guard = ev.new_guard
+
+
+def _guard(cfg, sens=None, **kw):
+    g = _new_guard(cfg, sens=sens, **kw)
+    if g is not None:
+        g.mon.c.T_trip = T_TRIP
+    return g
+
+
+ev.new_guard = _guard
+
+
+def sec_safety(fig=None):
+    print(f"== HEAT-ONLY: SAFETY, injected faults during the staircase (controller cap 75 C, monitor hard trip {T_TRIP:.0f} C) ==")
+    cfg = ev.make_cfg()
+    faults = [("thermocouple open (reads 0 C)", "tc_open"), ("thermocouple frozen", "tc_stuck"), ("thermocouple reads 30 K low", "tc_offset"),
+              ("position sensor frozen", "d_stuck"), ("controller hangs, current frozen", "hang"), ("power stage stuck on", "stuck_on"),
+              ("wire contact fails (R x3)", "wire_open")]
+    print(f"{'fault':36s} {'at [s]':>6s} | {'no monitor: Tmax after':>22s} | {'stopped by':>22s} {'t [s]':>7s} {'Tmax after':>10s}  result")
+    n = n_ok = 0
+    for use_T2 in (True, False):
+        for name, f in (faults if use_T2 else faults[:3]):
+            for t_f in (3.0, 20.0, 40.0):
+                res = []
+                for protect in (False, True):
+                    g = ev.Guard(ev.NOM, cfg.Ts, fault=f, t_fault=t_f, label=name, protect=protect, use_T2=use_T2)
+                    g.mon.c.T_trip = T_TRIP
+                    L, seg, home = ev.sequence(targets=UP, hold_s=10.0, t_max=300.0, guard=g, sens=ev.Sensors(T0=22.0))
+                    by = g.mon.reason if (protect and g.mon.tripped) else None
+                    res.append((g.Tmax_after, by, g.t))
+                (Tn, _, _), (Tp, by, tt) = res
+                ok = (by is not None and Tp < T_TRIP + 10.0) or Tn < T_TRIP
+                n, n_ok = n + 1, n_ok + ok
+                print(f"{name + ('' if use_T2 else ' [no T2]'):36s} {t_f:6.0f} | {Tn:22.1f} | {str(by):>22s} {tt:7.1f} {Tp:10.1f}  {'ok' if ok else 'NOT STOPPED'}")
+    print(f"{n_ok} of {n} fault runs ended below the trip temperature + 10 K (or never exceeded the trip without the monitor); fail-safe = power off")
+
+
+SECTIONS = dict(safety=sec_safety, steps=sec_steps, ramps=sec_ramps, disturb=sec_disturb, robust=sec_robust, sensors=sec_sensors)
 
 if __name__ == "__main__":
     SECTIONS[sys.argv[1]](sys.argv[2] if len(sys.argv) > 2 else None)

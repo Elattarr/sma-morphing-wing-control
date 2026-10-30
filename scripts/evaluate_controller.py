@@ -215,6 +215,11 @@ def sequence(targets=(1.0, 0.5, 0.8, 0.0), hold_s=30.0, t_max=5000.0, p_true=Non
         if guard:
             Tm, d = guard.sense(Tm, d, w)
         I = ctl.step(tgt, Tm, d)
+        if guard and cfg.heat_only and guard.mon.stroke_mm is None:           # no homing: the stall check works from the model stroke, then from the learned one
+            guard.mon.set_calibration(abs(ctl.st.strain(0.0) - ctl.st.strain(1.0)) * ctl.p.L * 1e3, ctl.T_limit_model)
+        if guard and cfg.heat_only and ctl.cal is not None and not getattr(guard, "_cal_done", False):
+            guard._cal_done = True
+            guard.mon.set_calibration(abs(ctl.cal.eps_ext - ctl.cal.eps_con) * ctl.p.L * 1e3, ctl.cal.Af)
         if guard:
             I = guard.apply(w, I, Tm, d, phase=1, tgt=tgt)
         plant_step(w, I, cfg.Ts, sigma_true, T_amb)

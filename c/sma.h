@@ -50,6 +50,10 @@ typedef struct {
              drdt_up, dn_frac, Kaw, db_start, db_done, T_amb_est, T_limit_above_Af, T_abs_max, T_limit_expand_rate, learn_margin,
              hold_step, hold_drift, hold_below_As, sigma_unc;
     int overshoot_exit;
+    /* heat-only (one-way actuator) mode, see cycle_controller.py: cfg_heat_only */
+    int heat_only, creep_confirm;
+    sma_real creep_rate, creep_detect, q_tau, approach_gain, approach_span, approach_min_rate, fast_detect, creep_pcap, settle_dr, settle_s,
+             full_min, near_tol, drop_tol, reset_r, reset_still_s, reset_timeout;
 } sma_cfg_t;
 
 /* ------------------------------------------------------------------ bias-spring stress model */
@@ -72,6 +76,8 @@ typedef struct {
     sma_real eps_ext, eps_con, As, Af, Tfs, Tfe, T_peak, t_heat, t_cool;
 } sma_cal_t;
 
+typedef enum { SMA_C_OK = 0, SMA_C_POSITION_DROPPED = 1, SMA_C_STALLED_SHORT = 2, SMA_C_RESET_TIMEOUT = 3 } sma_cfault_t;
+
 typedef struct {
     sma_wire_t w;
     sma_cfg_t c;
@@ -85,6 +91,10 @@ typedef struct {
     sma_real T_limit_model, T_lim, T_hold, T_hold_max, T_peak, r_hold_ref;
     int cal_valid;
     sma_cal_t cal;
+    /* heat-only state */
+    sma_cfault_t fault;
+    int d_first_set, resetting, saturated, r_q_valid, d_valid, n_detect, Tg_valid, T_start_valid, settle_valid;
+    sma_real T_ref, r_goal, r_max, r_q, d_q, d_first, Tg, T_start_obs, settle_ref, t_settle, t_reset, t_rest;
 } sma_ctl_t;
 
 void     sma_ctl_init(sma_ctl_t *ct, const sma_wire_t *w, const sma_meff_t *M, const sma_cfg_t *cfg, sma_real sigma_ext, sma_real K_spring);
@@ -93,6 +103,8 @@ sma_real sma_ctl_r_from_disp(const sma_ctl_t *ct, sma_real d_mm);
 sma_real sma_resistance(const sma_wire_t *w, sma_real r);
 /* one control step: target r in [0,1], thermocouple [C], displacement [mm]; returns the commanded current [A] */
 sma_real sma_ctl_step(sma_ctl_t *ct, sma_real r_target, sma_real T_meas, sma_real d_meas_mm);
+/* heat-only: call when the wing is being returned externally; power stays off until r < reset_r for reset_still_s (fault 'reset_timeout' otherwise) */
+void     sma_ctl_begin_reset(sma_ctl_t *ct);
 
 /* ------------------------------------------------------------------ homing */
 typedef enum { SMA_H_WAIT = 0, SMA_H_HEAT = 1, SMA_H_COOL = 2 } sma_hphase_t;

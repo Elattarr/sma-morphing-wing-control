@@ -56,3 +56,38 @@ def test_single_precision_same_decisions(built, name):
         if k == "tfe":                                  # the 99.5 % crossing sits on the slow extension tail: float rounding picks a neighbouring sample
             tol = 1.5 if name == "noisy_sensors" else 0.15
         assert r[k] == pytest.approx(getattr(cal, key), abs=tol)
+
+
+# ---- heat-only controller: exported in its own process (the plant is chosen by environment variables at import) ----
+HO = ["ho_nominal", "ho_spread4", "ho_noisy", "ho_short_stroke", "ho_fault_tc_offset", "ho_fault_stuck_on"]
+
+
+@pytest.fixture(scope="module")
+def built_ho(tmp_path_factory):
+    d = tmp_path_factory.mktemp("cport_ho")
+    flags = ["-std=c99", "-Wall", "-Wextra", "-pedantic", "-Werror", "-O2"]
+    for name, extra in (("replay", []), ("replay_f", ["-DSMA_FLOAT"])):
+        subprocess.run(["gcc", *flags, *extra, str(ROOT / "c/sma.c"), str(ROOT / "c/replay.c"), "-o", str(d / name), "-lm"], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts/export_replay_heatonly.py"), str(d)], check=True, capture_output=True,
+                   env={k: v for k, v in os.environ.items() if not k.startswith("SMA_")})
+    return d
+
+
+@pytest.mark.parametrize("name", HO)
+def test_heat_only_double_precision_identical(built_ho, name):
+    r = run(built_ho, "replay", name)
+    assert r["max_dI_ctl"] < 1e-9 and r["max_dI_perm"] < 1e-9 and r["relay_mismatch"] == 0 and r["first_bad"] == -1
+    assert int(r["ctl_fault"]) == 0
+
+
+def test_heat_only_learner_path_is_replayed(built_ho):
+    r = run(built_ho, "replay", "ho_short_stroke")
+    assert int(r["ctl_cal"]) == 1 and int(r["ctl_sat"]) == 1 and 52.0 < r["ctl_af"] < 66.0 and int(r["trip"]) == 0
+
+
+@pytest.mark.parametrize("name", HO)
+def test_heat_only_single_precision_same_decisions(built_ho, name):
+    ref = run(built_ho, "replay", name)
+    r = run(built_ho, "replay_f", name)
+    assert int(r["trip"]) == int(ref["trip"]) and int(r["ctl_cal"]) == int(ref["ctl_cal"]) and int(r["ctl_fault"]) == int(ref["ctl_fault"])
+    assert r["max_dI_ctl"] < 0.05

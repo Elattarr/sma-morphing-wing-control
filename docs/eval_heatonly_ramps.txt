@@ -1,7 +1,7 @@
 == HEAT-ONLY: RAMP TRACKING (reference 0 -> 1) ==
 case                         RMS err %  RMS [mm] max err % best lag s   Tmax   E[J]
-up ramp 0→1 in   20 s               6.58      2.78     26.09          0   54.3    229
-up ramp 0→1 in   60 s               2.12      0.90      9.50          0   54.1    272
-up ramp 0→1 in  180 s               2.11      0.89      5.43          0   54.3    405
-up ramp 0→1 in  600 s               2.46      1.04      5.39          0   54.3    745
+up ramp 0→1 in   20 s               6.73      2.84     26.10          0   54.1    229
+up ramp 0→1 in   60 s               2.40      1.01     10.18          0   54.1    271
+up ramp 0→1 in  180 s               1.85      0.78      4.72          0   54.1    400
+up ramp 0→1 in  600 s               1.77      0.75      3.12         10   54.1    820
 safety monitor: no trips in any run

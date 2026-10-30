@@ -67,6 +67,21 @@ class CycleCfg:
     heat_only: bool = False      # one-way actuator (no return stroke): never enter 'down', hold = power off (position is held by the wire itself)
     creep_rate: float = 1.0      # K/s  heat-only: temperature goal ramp after the pre-heat, until the first motion is seen
     creep_detect: float = 0.01   # recovered fraction that counts as 'the wire has started to move' (hands over to the position loop)
+    q_tau: float = 0.2           # s    heat-only: fast filter of r for the motion detector (noise rectification would start the position loop too early)
+    creep_confirm: int = 3       #      samples in a row above creep_detect (fast-filtered r) that count as motion (noise rejection)
+    approach_gain: float = 100.0  # 1/s  heat-only pre-heat: rate cap = gain * (T_pre + span - T): slows down before the uncertain start of the window
+    approach_span: float = 6.0   # K
+    approach_min_rate: float = 20.0  # K/s  (defaults = no slow-down; 1.2 / 4 K/s tested, no gain)
+    fast_detect: float = 3.0     # raw r above r_entry + fast_detect * creep_detect counts as motion at once (no confirmation delay for clear motion)
+    creep_pcap: float = 1e9      # creep power cap  P <= Q + creep_pcap * m c * creep_rate: bounds how fast the wire can move before motion is recognised
+    settle_dr: float = 0.004     # heat-only: motion smaller than this (fast-filtered r) ...
+    settle_s: float = 4.0        # s    ... for this long while heating means the wire has stopped (end of travel, tail, or jam)
+    full_min: float = 0.85       #      a stop at r >= this when the full stroke was requested is accepted as the end of travel (first-stroke learner)
+    near_tol: float = 0.05       #      a stop within this of an intermediate target is accepted
+    drop_tol: float = 0.10       #      heat-only: filtered r falls this far below its maximum without a reset -> fault 'position_dropped'
+    reset_r: float = 0.05        #      after begin_reset(): r must be below this ...
+    reset_still_s: float = 3.0   # s    ... for this long
+    reset_timeout: float = 900.0 # s    ... within this time, else fault 'reset_timeout'
     overshoot_exit: bool = True  # leave up/down when the position overshoots the target by more than db_start (hold then corrects it)
     sigma_unc: float = 30.0      # MPa, assumed uncertainty of the bias stress: widens the over-temperature limit by 0.146 K/MPa
 
@@ -239,7 +254,7 @@ def cfg_heat_only(p: SMAParams, **overrides) -> CycleCfg:
     """preset for a one-way actuator (heating only, no return stroke): no 'down' mode, hold = power off, pre-heat stops 3 K below A_s and a
     1 K/s temperature creep finds the real start of the window, then a slow (0.1/s) and stiff (Kr 8/s) position loop. Found in simulation
     on the 2 mm thesis wire; NOT validated, re-tune on the bench (an overshoot cannot be undone in a one-way system)."""
-    d = dict(heat_only=True, margin_up=3.0, creep_rate=1.0, creep_detect=0.01, Kr=8.0, drdt_up=0.1)
+    d = dict(heat_only=True, margin_up=3.0, creep_rate=1.0, creep_detect=0.01, Kr=8.0, drdt_up=0.1, T_abs_max=75.0)
     d.update(overrides)
     return cfg_for_wire(p, **d)
 
@@ -261,6 +276,8 @@ class CycleController:
         self.T_safe = self.Tfs + self.c.T_safe_above_fs
         mid = 0.5 * (self.Tfs + self.Tfe)
         self.rate_dn = self.c.dn_frac * p.h * p.surface * (mid - self.c.T_amb_est) / self.m_eff
+        if self.c.heat_only:
+            self.rate_dn = 0.0                                                  # no downward reference (and (mid - T_amb) is negative here: the clip would force the reference UP)
         self.mode = "hold"
         self.in_loop = False
         self.Tcmd = None
@@ -278,6 +295,11 @@ class CycleController:
         self.r_hold_ref = 0.0
         self.cal = None
         self.Tg = None
+        # heat-only bookkeeping
+        self.fault, self.resetting, self.saturated, self.r_goal = None, False, False, -1.0
+        self.r_max, self.r_q, self.n_detect, self.d_q, self.d_first = 0.0, None, 0, None, None
+        self._T_ref = 0.0
+        self.T_start_obs, self._settle_ref, self._t_settle, self._t_reset, self._t_rest = None, None, 0.0, 0.0, 0.0
         self.T_motion = self.Tfs + np.sqrt(2.0 / 3.0) / M.beta * self.c.sigma_unc + 2.0   # highest T where motion may start the down loop
 
     def apply_calibration(self, cal: "Calibration"):
@@ -289,6 +311,8 @@ class CycleController:
         self.m_eff = p.latent_total + p.heat_capacity * self.W
         mid = 0.5 * (self.Tfs + self.Tfe)
         self.rate_dn = c.dn_frac * p.h * p.surface * max(mid - c.T_amb_est, 1.0) / self.m_eff
+        if c.heat_only:
+            self.rate_dn = 0.0
         self.T_pre = self.As - c.margin_up
         self.T_safe = self.Tfs + c.T_safe_above_fs
         self.T_limit_model = self.T_lim = self.T_limit = min(self.Af + c.T_limit_above_Af, c.T_abs_max)
@@ -301,21 +325,24 @@ class CycleController:
     def r_from_disp(self, d_mm: float) -> float:
         eps = d_mm / (self.p.L * 1e3)
         cal = self.cal
+        if cal is None and self.c.heat_only and self.d_first is not None:       # one-point zero: the wire is extended (r = 0) at power-up [ASSUMED]
+            eps = eps - self.d_first / (self.p.L * 1e3) + self.st.strain(1.0)
         if cal is not None:                      # two-point correction: measured end points -> the model's end points, model shape in between
             m1, m0 = self.st.strain(1.0), self.st.strain(0.0)
             eps = m1 + (eps - cal.eps_ext) * (m0 - m1) / (cal.eps_con - cal.eps_ext)
         return 1.0 - self.st.xi_from_strain(eps)
 
     # ---------------------------------------------------------------- loops
-    def _temp_loop(self, goal, T_meas, Q, P_max, Kp=None, Ki=None):
+    def _temp_loop(self, goal, T_meas, Q, P_max, Kp=None, Ki=None, rate_cap=None):
         c = self.c
+        dmax = c.dTdt_max if rate_cap is None else min(rate_cap, c.dTdt_max)
         Kp = c.Kp if Kp is None else Kp
         Ki = c.Ki if Ki is None else Ki
         if self.Tcmd is None:
             self.Tcmd = T_meas
-        step = np.clip(c.k_soft * (goal - self.Tcmd), -c.dTdt_max, c.dTdt_max) * c.Ts
-        if abs(goal - self.Tcmd) > c.dTdt_max / c.k_soft:           # constant-rate ramp far from the goal
-            step = np.sign(goal - self.Tcmd) * c.dTdt_max * c.Ts
+        step = np.clip(c.k_soft * (goal - self.Tcmd), -dmax, dmax) * c.Ts
+        if abs(goal - self.Tcmd) > dmax / c.k_soft:                 # constant-rate ramp far from the goal
+            step = np.sign(goal - self.Tcmd) * dmax * c.Ts
         self.Tcmd += step
         e = self.Tcmd - T_meas
         P_un = Q + Kp * e + self.I_a
@@ -342,11 +369,56 @@ class CycleController:
         self.rf_entry = self.r_f
         self.r_hold_ref, self.T_peak = self.r_f, -1e9
         self.mode, self.in_loop, self.Tcmd, self.Tg = mode, False, None, None
+        self.n_detect, self._settle_ref, self._t_settle = 0, None, 0.0
         self.I_a = self.I_b = 0.0
+
+    # ---------------------------------------------------------------- heat-only: stop, learn, reset
+    def _stopped(self, r_target, T_meas):
+        """the wire has stopped moving while heated, short of the reference: decide between end of travel, tail, and fault"""
+        c = self.c
+        self.r_goal = r_target
+        if r_target >= 0.97 and self.r_q >= c.full_min:                  # full stroke requested and the wire is (nearly) there: end of travel
+            self.saturated = True
+            if self.cal is None and self.d_first is not None:            # first full stroke: the measured end points replace the model's
+                L = self.p.L * 1e3
+                self.apply_calibration(Calibration(eps_ext=self.d_first / L, eps_con=self.d_q / L,
+                                                   As=self.T_start_obs if self.T_start_obs is not None else self.As, Af=self._T_ref,
+                                                   Tfs=self.Tfs, Tfe=self.Tfe, T_peak=self.T_peak, t_heat=0.0, t_cool=0.0))
+                self.r_est = self.r_f = self.r_q = self.r_max = self.r_from_disp(self.d_q)   # restart every position estimate on the new mapping
+            else:
+                self._enter("hold")
+        elif r_target < 0.97 and self.r_q >= r_target - c.near_tol:     # tail of the window: close enough
+            self._enter("hold")
+        else:
+            self.fault = "stalled_short"                                 # jam, broken wire, or a window above the temperature limit
+            self._enter("hold")
+
+    def begin_reset(self):
+        """call when the wing is being returned by hand / mechanism: power stays off until r is back near 0, then the controller re-arms"""
+        if self.fault not in (None, "position_dropped", "reset_timeout", "stalled_short"):
+            return
+        self.fault, self.resetting, self._t_reset, self._t_rest = None, True, 0.0, 0.0
+
+    def _reset_step(self):
+        c = self.c
+        self._t_reset += c.Ts
+        self._t_rest = self._t_rest + c.Ts if self.r_f < c.reset_r else 0.0
+        if self._t_rest >= c.reset_still_s:
+            self.resetting, self.saturated, self.r_max, self.r_goal = False, False, self.r_f, -1.0
+            self._enter("hold")
+        elif self._t_reset > c.reset_timeout:
+            self.fault, self.resetting = "reset_timeout", False
+        return 0.0
+
+    @property
+    def ready(self) -> bool:
+        return self.fault is None and not self.resetting
 
     # ---------------------------------------------------------------- one control step
     def step(self, r_target: float, T_meas: float, d_meas_mm: float) -> float:
         c, p = self.c, self.p
+        if c.heat_only and self.d_first is None:
+            self.d_first = d_meas_mm
         r = self.r_from_disp(d_meas_mm)
         self.r_est = r
         self.r_f = r if self.r_f is None else self.r_f + c.Ts / c.tau_filt * (r - self.r_f)
@@ -354,9 +426,21 @@ class CycleController:
         P_max = p.Imax ** 2 * R
         Q = p.h * p.surface * max(T_meas - c.T_amb_est, 0.0)
         self.T_peak = max(self.T_peak, T_meas)
+        if c.heat_only:
+            a = c.Ts / c.q_tau
+            self.r_q = r if self.r_q is None else self.r_q + a * (r - self.r_q)
+            self.d_q = d_meas_mm if self.d_q is None else self.d_q + a * (d_meas_mm - self.d_q)
+            if self.fault:
+                return 0.0
+            if self.resetting:
+                return self._reset_step()
+            self.r_max = max(self.r_max, self.r_f)
+            if self.r_f < self.r_max - c.drop_tol:                      # the wire cannot extend by itself: a fall means a reset, a slip or a sensor fault
+                self.fault = "position_dropped"
+                return 0.0
         if self.mode == "hold":
-            if r_target > self.r_f + c.db_start:
-                self._enter("up")
+            if r_target > self.r_f + c.db_start and (not c.heat_only or r_target > self.r_goal + 1e-9):
+                self._enter("up")                                     # heat-only: a target that was already accepted is not chased again (the wire cannot go further)
             elif r_target < self.r_f - c.db_start and not c.heat_only:
                 self._enter("down")
         P = 0.0
@@ -364,7 +448,15 @@ class CycleController:
         # so accept 0.03 there; inside the range use the tight tolerance
         tol = c.db_done if 0.03 < r_target < 0.97 else 0.03
         if self.mode == "up":
-            pre = not self.in_loop and r < self.r_entry + (c.creep_detect if c.heat_only else c.db_start)
+            if c.heat_only and not self.in_loop:
+                self.n_detect = self.n_detect + 1 if self.r_q > self.r_entry + c.creep_detect else 0
+                moved = self.n_detect >= c.creep_confirm or r > self.r_entry + c.fast_detect * c.creep_detect
+                if moved and self.T_start_obs is None:
+                    self.T_start_obs = T_meas                              # measured start of the recovery (first stroke)
+                    self.T_pre = min(self.T_pre, T_meas - c.margin_up)    # the next move pre-heats only to just below the measured start
+            else:
+                moved = r >= self.r_entry + c.db_start
+            pre = not self.in_loop and not moved
             if c.heat_only and pre and (self.Tg is not None or T_meas >= self.T_pre - 0.1):
                 # heat-only: slow temperature creep from just below A_s until the wire moves; the window position is not trusted,
                 # and the position loop must not wind up on an error it cannot yet reduce
@@ -373,11 +465,12 @@ class CycleController:
                 self.Tg += c.creep_rate * c.Ts
                 if T_meas > self.T_lim - 1.0:
                     self.T_lim = min(self.T_lim + c.T_limit_expand_rate * c.Ts, c.T_abs_max)
-                P = self._temp_loop(self.Tg, T_meas, Q, P_max)
+                P = min(self._temp_loop(self.Tg, T_meas, Q, P_max), Q + c.creep_pcap * p.heat_capacity * c.creep_rate)
                 if T_meas > self.T_lim:
                     P = 0.0
             elif pre and T_meas < self.T_pre - 0.1:
-                P = self._temp_loop(self.T_pre, T_meas, Q, P_max)
+                cap = max(c.approach_min_rate, c.approach_gain * (self.T_pre + c.approach_span - T_meas)) if c.heat_only else None
+                P = self._temp_loop(self.T_pre, T_meas, Q, P_max, rate_cap=cap)   # heat-only: slow down before the (uncertain) window start
             else:
                 P = self._pos_loop(r_target, r, Q, P_max, c.drdt_up, c.Kr, c.Ki_r)
                 if self.in_loop and T_meas > self.T_lim - 1.0 and r_target - self.r_f > c.db_start:
@@ -385,11 +478,20 @@ class CycleController:
                     self.T_lim = min(self.T_lim + c.T_limit_expand_rate * c.Ts, c.T_abs_max)
                 if T_meas > self.T_lim:
                     P = 0.0
+                if c.heat_only and self.in_loop and (P > 0.0 or T_meas > self.T_pre):
+                    if self._settle_ref is None or abs(self.r_q - self._settle_ref) > c.settle_dr:
+                        self._settle_ref, self._t_settle, self._T_ref = self.r_q, 0.0, T_meas
+                    else:
+                        self._t_settle += c.Ts
+                    if self._t_settle >= c.settle_s and r_target - self.r_f > c.db_done:
+                        self._stopped(r_target, T_meas)
+                        return 0.0
                 if abs(self.rref - r_target) < 1e-9 and abs(r_target - r) < tol:
                     self.T_lim = max(self.T_limit_model, min(self.T_peak + c.learn_margin, c.T_abs_max))
                     # a part of the wire that needed d K more than A_f to recover also starts its forward transformation d K higher:
                     # hold at least d above the model's safe temperature (never above T_hold_max)
                     self.T_hold = min(max(self.T_hold, self.T_safe + max(self.T_peak - self.Af, 0.0)), self.T_hold_max)
+                    self.r_goal = r_target
                     self._enter("hold")
                 elif c.overshoot_exit and self.r_f > r_target + c.db_start:          # overshot beyond the tolerance: stop heating, let hold decide (extend)
                     self._enter("hold")

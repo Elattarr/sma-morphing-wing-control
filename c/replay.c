@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#define FABS fabs
 #include "sma.h"
 
 static sma_real heat_rec[SMA_HEAT_MAX][3];
@@ -37,12 +38,16 @@ int main(int argc, char **argv)
     for (i = 0; i < 8; i++) rd(f, &v[i]);
     M.T0 = v[0]; M.R = v[1]; M.beta = v[2]; M.eps_L = v[3]; M.h = v[4]; M.m = v[5]; M.E_A = v[6]; M.E_M = v[7];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* cfg */
-    for (i = 0; i < 30; i++) rd(f, &v[i]);
+    for (i = 0; i < 48; i++) rd(f, &v[i]);
     cfg.Ts = v[0]; cfg.Kp = v[1]; cfg.Ki = v[2]; cfg.k_soft = v[3]; cfg.dTdt_max = v[4]; cfg.margin_up = v[5]; cfg.margin_dn = v[6];
     cfg.T_safe_above_fs = v[7]; cfg.Kr = v[8]; cfg.Ki_r = v[9]; cfg.Kr_dn = v[10]; cfg.Ki_r_dn = v[11]; cfg.tau_filt = v[12]; cfg.Kp_hold = v[13];
     cfg.Ki_hold = v[14]; cfg.drdt_up = v[15]; cfg.dn_frac = v[16]; cfg.Kaw = v[17]; cfg.db_start = v[18]; cfg.db_done = v[19]; cfg.T_amb_est = v[20];
     cfg.T_limit_above_Af = v[21]; cfg.T_abs_max = v[22]; cfg.T_limit_expand_rate = v[23]; cfg.learn_margin = v[24]; cfg.hold_step = v[25];
     cfg.hold_drift = v[26]; cfg.hold_below_As = v[27]; cfg.sigma_unc = v[28]; cfg.overshoot_exit = (int)v[29];
+    cfg.heat_only = (int)v[30]; cfg.creep_confirm = (int)v[31]; cfg.creep_rate = v[32]; cfg.creep_detect = v[33]; cfg.q_tau = v[34];
+    cfg.approach_gain = v[35]; cfg.approach_span = v[36]; cfg.approach_min_rate = v[37]; cfg.fast_detect = v[38]; cfg.creep_pcap = v[39];
+    cfg.settle_dr = v[40]; cfg.settle_s = v[41]; cfg.full_min = v[42]; cfg.near_tol = v[43]; cfg.drop_tol = v[44]; cfg.reset_r = v[45];
+    cfg.reset_still_s = v[46]; cfg.reset_timeout = v[47];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* ctl */
     rd(f, &v[0]); rd(f, &v[1]); sigma = v[0]; K = v[1];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* safety */
@@ -62,13 +67,21 @@ int main(int argc, char **argv)
     sma_safety_init(&SAF, &w, &M, cfg.Ts, &sc);
     sma_safety_arm(&SAF, arm_T1, arm_have_T2, arm_T2);
 
-    double max_dc = 0, max_dp = 0; int relay_bad = 0, first_bad = -1, home_done_row = -1, home_applied = 0;
+    double max_dc = 0, max_dp = 0; int relay_bad = 0, first_bad = -1, home_done_row = -1, home_applied = 0, ho_cal_done = 0;
     for (i = 0; i < n; i++) {
         double phase, tgt, T1, d, I_ctl, I_in, I_meas, T2, V, beat, I_perm, relay, hT2, hV, hd;
         if (!(rd(f, &phase) && rd(f, &tgt) && rd(f, &T1) && rd(f, &d) && rd(f, &I_ctl) && rd(f, &I_in) && rd(f, &I_meas) && rd(f, &hT2) && rd(f, &T2) &&
               rd(f, &hV) && rd(f, &V) && rd(f, &hd) && rd(f, &beat) && rd(f, &I_perm) && rd(f, &relay))) { fprintf(stderr, "short file at row %d\n", i); return 2; }
         sma_real Ic;
-        if (phase < 0.5 || !HOME.done) {          /* a single-precision build may need a sample more than Python: keep homing until it is done */
+        if (cfg.heat_only) {                         /* no homing: the controller learns its end points, the monitor gets the model stroke first */
+            Ic = sma_ctl_step(&CTL, (sma_real)tgt, (sma_real)T1, (sma_real)d);
+            if (!SAF.stroke_valid)
+                sma_safety_set_cal(&SAF, FABS(sma_strain(&CTL.st, 0) - sma_strain(&CTL.st, 1)) * w.L * (sma_real)1e3, CTL.T_limit_model);
+            if (CTL.cal_valid && !ho_cal_done) {
+                ho_cal_done = 1;
+                sma_safety_set_cal(&SAF, FABS(CTL.cal.eps_ext - CTL.cal.eps_con) * w.L * (sma_real)1e3, CTL.cal.Af);
+            }
+        } else if (phase < 0.5 || !HOME.done) {          /* a single-precision build may need a sample more than Python: keep homing until it is done */
             Ic = sma_home_step(&HOME, (sma_real)T1, (sma_real)d);
             if (HOME.done && home_done_row < 0) home_done_row = i;
         } else {
@@ -89,6 +102,8 @@ int main(int argc, char **argv)
         if (first_bad < 0 && (dc > 1e-6 || dp > 1e-6 || relay_c != (int)relay)) first_bad = i;
     }
     fclose(f);
+    printf("ctl_cal %d ctl_as %.9g ctl_af %.9g ctl_eps_ext %.12g ctl_eps_con %.12g ctl_fault %d ctl_sat %d ", CTL.cal_valid, (double)CTL.cal.As, (double)CTL.cal.Af,
+           (double)CTL.cal.eps_ext, (double)CTL.cal.eps_con, (int)CTL.fault, CTL.saturated);
     printf("rows %d max_dI_ctl %.3e max_dI_perm %.3e relay_mismatch %d first_bad %d home_done_row %d home_fault %d cal %d "
            "as %.9g af %.9g tfs %.9g tfe %.9g eps_ext %.12g eps_con %.12g trip %d\n",
            n, max_dc, max_dp, relay_bad, first_bad, home_done_row, (int)HOME.fault, HOME.cal_valid,

@@ -1,15 +1,15 @@
 == HEAT-ONLY: DISTURBANCES while moving to r = 0.5 and to 1.0 ==
 case                         target time to target final err %   Tmax   E[J]
-nominal                         0.5            9.3       +0.55   52.7    163
-air flow x3 from 0 s            0.5            9.9       +0.43   52.7    183
-air flow x0.5 from 0 s          0.5            9.3       +0.81   52.7    159
-ambient -10 K                   0.5           10.2       +0.43   52.7    201
-ambient +10 K                   0.5            9.0       +0.33   52.7    126
-air flow x3 from 4 s            0.5            9.8       +0.28   52.7    176
-nominal                         1.0           14.4       +0.00   54.3    223
+nominal                         0.5            9.5       +0.26   52.7    163
+air flow x3 from 0 s            0.5            9.9       +0.12   52.7    183
+air flow x0.5 from 0 s          0.5            9.5       +0.40   52.7    158
+ambient -10 K                   0.5           10.2       +0.10   52.7    201
+ambient +10 K                   0.5            9.2       +0.27   52.7    126
+air flow x3 from 4 s            0.5            9.8       -0.09   52.7    176
+nominal                         1.0           14.5       +0.00   54.2    223
 air flow x3 from 0 s            1.0           14.9       +0.00   54.2    255
-air flow x0.5 from 0 s          1.0           14.3       +0.00   54.3    215
-ambient -10 K                   1.0           15.2       +0.00   54.3    263
-ambient +10 K                   1.0           14.0       +0.00   54.4    184
-air flow x3 from 4 s            1.0           14.8       +0.00   54.2    248
+air flow x0.5 from 0 s          1.0           14.5       +0.00   54.2    215
+ambient -10 K                   1.0           15.3       +0.00   54.2    263
+ambient +10 K                   1.0           14.2       +0.00   54.2    184
+air flow x3 from 4 s            1.0           14.9       -0.05   54.1    248
 safety monitor: no trips in any run

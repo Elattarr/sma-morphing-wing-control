@@ -15,7 +15,7 @@ Checks (each one targets a failure the controller cannot see by itself):
          upper:  m c dT = I^2 R_max - h_min S (T - T_amb_hi)                   (no latent heat credit)
          lower:  m c dT = I^2 R_min - h_max S (T - T_amb_lo) - latent sink      (full convection, latent heat absorbed first)
      catches an open or shorted thermocouple, a sensor stuck at a plausible value while the heater runs, a wrong channel.
-  4. STALL                   T1 above A_f,max + stall_dT for t_stall without any motion of the position sensor
+  4. STALL                   T1 above A_f,max + stall_dT for t_stall of heating (I_meas > 0.3 A) without any motion of the position sensor
          (jammed wire, stuck/broken position sensor): needs the stroke from homing                -> 'stall'
   5. CURRENT MISMATCH        measured current > commanded + tolerance (power stage stuck on)                   -> 'current_mismatch'
   6. WIRE RESISTANCE         V/I outside [R_min, R_max] (broken wire, loose contact)                           -> 'resistance'
@@ -157,7 +157,8 @@ class SafetyMonitor:
             if T1 > self.Af_max + c.stall_dT:
                 if self._d_hot0 is None:
                     self._d_hot0, self._t_hot = d, 0.0
-                self._t_hot += dt
+                if I_meas > 0.3:                                    # only a HEATED wire that does not move is a stall (a hot wire cooling at rest is not)
+                    self._t_hot += dt
                 if abs(d - self._d_hot0) > c.stall_frac * self.stroke_mm:
                     self._d_hot0, self._t_hot = d, 0.0
                 if self._t_hot > c.t_stall:

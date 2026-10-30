@@ -51,11 +51,11 @@ int main(int argc, char **argv)
     if (fscanf(f, "%31s", key) != 1) return 2;          /* ctl */
     rd(f, &v[0]); rd(f, &v[1]); sigma = v[0]; K = v[1];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* safety */
-    for (i = 0; i < 22; i++) rd(f, &v[i]);
+    for (i = 0; i < 23; i++) rd(f, &v[i]);
     sc.T_trip = v[0]; sc.T_disagree = v[1]; sc.T_disagree_dyn = v[2]; sc.h_min = v[3]; sc.h_max = v[4]; sc.dT_amb = v[5]; sc.band = v[6];
     sc.T_lat_lo = v[7]; sc.stall_dT = v[8]; sc.t_stall = v[9]; sc.stall_frac = v[10]; sc.I_tol_abs = v[11]; sc.I_tol_rel = v[12];
     sc.t_I_mismatch = v[13]; sc.R_tol = v[14]; sc.mc_min_frac = v[15]; sc.mc_max_frac = v[16]; sc.lat_max_frac = v[17]; sc.tc_lag_max = v[18];
-    sc.T_range_lo = v[19]; sc.T_range_hi = v[20]; sc.n_freeze = (int)v[21];
+    sc.T_range_lo = v[19]; sc.T_range_hi = v[20]; sc.n_freeze = (int)v[21]; sc.t_tc_freeze = v[22];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* arm */
     rd(f, &v[0]); rd(f, &v[1]); rd(f, &v[2]);
     arm_T1 = v[0]; arm_have_T2 = (int)v[1]; arm_T2 = v[2];

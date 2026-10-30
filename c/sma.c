@@ -525,7 +525,7 @@ void sma_safety_init(sma_safety_t *s, const sma_wire_t *w, const sma_meff_t *M, 
     s->tripped = 0; s->reason = SMA_S_OK; s->t = 0; s->armed = 0;
     s->T_lo = s->T_lo_f = s->T_hi = s->Tamb0 = 0;
     s->I_prev = 0; s->t_Imis = 0; s->t_hot = 0; s->d_hot0 = 0; s->d_hot_valid = 0;
-    s->T_prev_valid = 0; s->beat_valid = 0; s->n_same = 0; s->T1_prev = s->T2_prev = 0; s->beat = 0;
+    s->T_prev_valid = 0; s->beat_valid = 0; s->n_same = 0; s->T1_prev = s->T2_prev = 0; s->beat = 0; s->T1_frz = 0; s->t_frz = 0; s->T1_frz_valid = 0;
     s->stroke_valid = 0; s->stroke_mm = s->Af_max = 0;
 }
 
@@ -606,6 +606,13 @@ sma_real sma_safety_step(sma_safety_t *s, sma_real I_cmd, sma_real I_meas, sma_r
             s->d_hot_valid = 0; s->t_hot = 0;
         }
     }
+
+    /* 9: frozen thermocouple */
+    if (s->T1_frz_valid && T1 == s->T1_frz && (I_meas > (sma_real)0.3 || T1 > s->Tamb0 + (sma_real)5.0)) {
+        s->t_frz += dt;
+        if (s->t_frz > c->t_tc_freeze) safety_trip(s, SMA_S_TC_FROZEN);
+    } else s->t_frz = 0;
+    s->T1_frz = T1; s->T1_frz_valid = 1;
 
     if (I_meas > s->I_prev * (1 + c->I_tol_rel) + c->I_tol_abs) {
         s->t_Imis += dt;

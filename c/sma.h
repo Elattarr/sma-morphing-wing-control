@@ -139,11 +139,11 @@ sma_real sma_home_step(sma_home_t *h, sma_real T_meas, sma_real d_meas_mm);
 
 /* ------------------------------------------------------------------ independent safety monitor */
 typedef enum { SMA_S_OK = 0, SMA_S_SENSOR_RANGE, SMA_S_OVER_TEMPERATURE, SMA_S_TC_DISAGREE, SMA_S_TC_READS_HIGH, SMA_S_TC_READS_LOW,
-               SMA_S_STALL, SMA_S_CURRENT_MISMATCH, SMA_S_RESISTANCE, SMA_S_WATCHDOG } sma_trip_t;
+               SMA_S_STALL, SMA_S_CURRENT_MISMATCH, SMA_S_RESISTANCE, SMA_S_WATCHDOG, SMA_S_TC_FROZEN } sma_trip_t;
 
 typedef struct {
     sma_real T_trip, T_disagree, T_disagree_dyn, h_min, h_max, dT_amb, band, T_lat_lo, stall_dT, t_stall, stall_frac, I_tol_abs, I_tol_rel,
-             t_I_mismatch, R_tol, mc_min_frac, mc_max_frac, lat_max_frac, tc_lag_max, T_range_lo, T_range_hi;
+             t_I_mismatch, R_tol, mc_min_frac, mc_max_frac, lat_max_frac, tc_lag_max, T_range_lo, T_range_hi, t_tc_freeze;
     int n_freeze;
 } sma_safety_cfg_t;
 
@@ -159,7 +159,8 @@ typedef struct {
     sma_real t, T_lo, T_lo_f, T_hi, Tamb0;
     sma_real I_prev, t_Imis, t_hot, d_hot0;
     int d_hot_valid, T_prev_valid, beat_valid, n_same;
-    sma_real T1_prev, T2_prev;
+    sma_real T1_prev, T2_prev, T1_frz, t_frz;
+    int T1_frz_valid;
     long beat;
     int stroke_valid;
     sma_real stroke_mm, Af_max;

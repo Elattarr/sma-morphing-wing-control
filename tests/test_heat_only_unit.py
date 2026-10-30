@@ -166,3 +166,25 @@ def test_io_loop_runs_a_move_in_millimetres_with_the_monitor():
         run_step(io, g.ctl, mon, -21.1, te, st)
         g.w.step(io.I, TS, 22.0, 1.0)
     assert abs(te.r_to_te(g.r()) - (-21.1)) < 1.0 and not mon.tripped and st.fault is None
+
+
+def test_safety_catches_a_frozen_thermocouple_and_not_a_noisy_one():
+    from sma_control.safety import SafetyCfg
+    mon = SafetyMonitor(P, TS)
+    mon.arm(22.0, None)
+    rng = np.random.default_rng(0)
+    for k in range(int(30 / TS)):                         # heated, noisy reading: no trip
+        mon.step(5.0, 5.0, 40.0 + 0.1 * rng.standard_normal())
+    assert not mon.tripped or mon.reason != "tc_frozen"
+    mon2 = SafetyMonitor(P, TS)
+    mon2.arm(22.0, None)
+    for k in range(int(30 / TS)):                         # the same value for ever while heated
+        mon2.step(5.0, 5.0, 30.0)
+        if mon2.tripped:
+            break
+    assert mon2.tripped and mon2.reason in ("tc_frozen", "tc_reads_low")
+    mon3 = SafetyMonitor(P, TS)
+    mon3.arm(22.0, None)
+    for k in range(int(60 / TS)):                         # cold idle wire at ambient, heater off: constant reading is fine
+        mon3.step(0.0, 0.0, 22.0)
+    assert not mon3.tripped

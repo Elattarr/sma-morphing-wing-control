@@ -71,7 +71,8 @@ What the runs show (default preset, regenerated 2026-10-30 after the last fixes;
   (about 0.4 % of 6.5 mm); LVDT/laser on the wire end, not a TE camera. Motion detection defaults (creep_confirm 3, fast_detect 3.0) were chosen by a sweep over the
   robust + sensor sets; they are the least invasive variant, not an optimum.
 - Safety fault injection (30 runs): all end below trip + 10 K; trips: watchdog, current_mismatch, resistance, tc_disagree, tc_reads_low, stall (frozen position sensor at 28 s).
-  NOT caught: a frozen thermocouple (6 of the 30 runs end without a trip; harmless in these runs only because the controller had already stopped heating, not because the monitor detects it).
+  Frozen thermocouple (bit-identical T1 for 10 s while heated or hot) is now caught as `tc_frozen` in all 3 injection times (30 of 30 runs end safe, every injected fault trips); zero false trips in the other
+  heat-only sections and in the 112-test suite. A frozen reading that still carries noise-like variation, or a drifting sensor, is not covered.
 - Found and fixed while porting: the stall check counted a hot wire cooling at rest as "no motion" and tripped after the learner stop (wire overshoots to ~65 °C, then cools ≥ 8 s above
   A_f,max + 5 K). The stall timer now only counts while I_meas > 0.3 A (Python and C).
 
@@ -83,7 +84,7 @@ reference above the target, so "done" never fired; this was the biggest single i
 Support code: `te_map.py` (r ↔ TE mm, piecewise linear, default 0 → −42.2 mm, ASSUMED linear), `hardware_io.py` (`RigIO` interface + `run_step`: sensors → controller →
 safety monitor → permitted current and relay; untested on hardware), C port (`c/sma.c`, `c/replay.c`): bit-identical to Python in double precision on six heat-only replays
 (nominal, 4 K spread, noisy, 10 %-short wire with learner, two fault injections); float build agrees on decisions, current differs by ≤ 3e-3 A.
-Tests: `tests/test_heat_only_unit.py` (12 behaviour tests), `tests/test_heat_only.py`, heat-only cases in `tests/test_c_port.py`; full suite 111 passed, 1 xfailed.
+Tests: `tests/test_heat_only_unit.py` (12 behaviour tests), `tests/test_heat_only.py`, heat-only cases in `tests/test_c_port.py`; full suite 112 passed, 1 xfailed.
 
 Still open / not validated:
 - Everything above is model vs model. The wire window in the model (A_s 51.2, A_f 54.1 °C at 15 MPa) is a reduced MEFF fit; ANSYS Up 40 shows deflection 99 % at 56 °C,

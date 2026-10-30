@@ -20,6 +20,7 @@ Checks (each one targets a failure the controller cannot see by itself):
   5. CURRENT MISMATCH        measured current > commanded + tolerance (power stage stuck on)                   -> 'current_mismatch'
   6. WIRE RESISTANCE         V/I outside [R_min, R_max] (broken wire, loose contact)                           -> 'resistance'
   7. WATCHDOG                heartbeat counter not changing (controller hung, current command frozen)          -> 'watchdog'
+  9. FROZEN THERMOCOUPLE     T1 bit-identical for t_tc_freeze while heated (I_meas > 0.3 A) or hot (> T_amb + 5 K): a real reading always has noise    -> 'tc_frozen'
   8. SENSOR RANGE            T1 or T2 outside [-20, 250] C (open circuit rails)                                -> 'sensor_range'
 
 [ASSUMED] bounds: convection coefficient h in [h_min, h_max] = [5, 100] W/m2/K, ambient within +/- 10 K of the value at arming.
@@ -48,6 +49,7 @@ class SafetyCfg:
     I_tol_rel: float = 0.5
     t_I_mismatch: float = 1.0        # s
     R_tol: float = 0.45              # relative tolerance on the wire resistance
+    t_tc_freeze: float = 10.0        # s   unchanged T1 reading while the wire is heated or hot
     n_freeze: int = 10               # samples with an unchanged heartbeat
     mc_min_frac: float = 0.3         # [ASSUMED] smallest credible m*c as a fraction of the nominal value (c as low as 250 J/kg/K): upper bound
     mc_max_frac: float = 2.0         # [ASSUMED] largest credible m*c (clamps, wires, glue): lower bound
@@ -73,6 +75,7 @@ class SafetyMonitor:
         self.To = None
         self._I_prev, self._t_Imis, self._t_hot, self._d_hot0 = 0.0, 0.0, 0.0, None
         self._beat, self._n_same, self._T1_prev, self._T2_prev = None, 0, None, None
+        self._T1_frz, self._t_frz = None, 0.0
         self.stroke_mm, self.Af_max = None, None
 
     def arm(self, T1: float, T2: float | None = None):
@@ -165,6 +168,15 @@ class SafetyMonitor:
                     self._trip("stall")
             else:
                 self._d_hot0, self._t_hot = None, 0.0
+
+        # 9: frozen thermocouple (exactly the same reading for t_tc_freeze while the wire is heated or hot)
+        if self._T1_frz is not None and T1 == self._T1_frz and (I_meas > 0.3 or T1 > self.Tamb0 + 5.0):
+            self._t_frz += dt
+            if self._t_frz > c.t_tc_freeze:
+                self._trip("tc_frozen")
+        else:
+            self._t_frz = 0.0
+        self._T1_frz = T1
 
         # 5: current mismatch
         if I_meas > self._I_prev * (1.0 + c.I_tol_rel) + c.I_tol_abs:

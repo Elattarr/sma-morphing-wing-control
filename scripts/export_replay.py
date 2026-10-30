@@ -17,7 +17,7 @@ from sma_control.safety import SafetyCfg, SafetyMonitor
 from sma_control.spring import BiasSpring
 
 TRIP_CODE = {None: 0, "sensor_range": 1, "over_temperature": 2, "tc_disagree": 3, "tc_reads_high": 4, "tc_reads_low": 5, "stall": 6,
-             "current_mismatch": 7, "resistance": 8, "watchdog": 9}
+             "current_mismatch": 7, "resistance": 8, "watchdog": 9, "tc_frozen": 10}
 
 
 def g(x):
@@ -41,7 +41,7 @@ def header(sigma_ctl):
              "meff " + " ".join(g(x) for x in (M.T0, M.R, M.beta, M.eps_L, M.h, M.m, u.E_A, u.E_M)),
              "cfg " + " ".join(g(float(cd[k])) for k in order),
              "ctl " + g(sigma_ctl) + " " + g(K),
-             "safety " + " ".join(g(getattr(sc, k)) for k in so) + f" {g(sc.T_range[0])} {g(sc.T_range[1])} {sc.n_freeze}"]
+             "safety " + " ".join(g(getattr(sc, k)) for k in so) + f" {g(sc.T_range[0])} {g(sc.T_range[1])} {sc.n_freeze} {g(sc.t_tc_freeze)}"]
     return lines
 
 

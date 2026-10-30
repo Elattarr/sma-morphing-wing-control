@@ -1,0 +1,7 @@
+== RAMP AND SINE TRACKING ==
+case                               RMS err % max err % best lag s  RMS after lag %   Tmax   E[J]
+up ramp 0→1 in 300 s                    1.40      3.23          0             1.40   91.8   1069
+down ramp 1→0 in 900 s                  3.77      9.20         30             2.15   37.0    296
+sine 0.5±0.2, period 2400 s             1.95      5.12         50             1.03   90.4   5449
+sine 0.5±0.2, period 900 s              3.65     11.61         30             2.30   90.4   3532
+safety monitor: no trips in any run

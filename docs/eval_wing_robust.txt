@@ -1,0 +1,19 @@
+== PARAMETER ERRORS: sequence r = 1.0 → 0.5 → 0.8 → 0.0 (controller built from nominal numbers) ==
+case                 targets reached max hold err %   Tmax  time [s]   E [J] homing [s]
+nominal                      4 of 4           0.81  109.8      1018     675        690
+Lambda = 46 J                4 of 4           0.88  105.8      1238     905        502
+c = 320                      4 of 4           0.66  122.1       871     444        538
+h_c = 5                      3 of 4           0.94  110.4      5000     573       3661
+h_c = 82                     4 of 4           1.27  107.9       795    1068        329
+rho reversed                 4 of 4           0.89  105.7      1009     667        684
+rho +20 %                    4 of 4           0.90  110.7      1175     745        687
+rho -20 %                    4 of 4           1.09  108.1      1010     672        692
+window 12 K                  0 of 4            nan  107.2         0       0        852   homing FAULT: preload_too_low
+sigma_ctl -10 %              4 of 4           0.84  109.7      1016     671        689
+sigma_ctl +10 %              4 of 4           0.72  109.8      1023     674        690
+sigma_ctl -20 %              4 of 4           0.76  109.7      1029     678        689
+sigma_ctl +20 %              4 of 4           0.87  109.8      1014     673        690
+ambient 15 C                 4 of 4           1.35  109.5       664     718        530
+ambient 26 C                 0 of 4            nan  109.3         0       0       1198   homing FAULT: preload_too_low
+ambient 26 C, preload 290         4 of 4           0.84  115.3       885     684        617
+safety monitor: no trips in any run

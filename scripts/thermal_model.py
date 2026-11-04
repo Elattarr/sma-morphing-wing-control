@@ -72,4 +72,4 @@ if __name__ == "__main__":
         print(f"t={tt:>4}s  I={I:5.1f} A  J={I/(A*1e6):4.1f} A/mm2  E={E:6.1f} J  meanP={E/t[-1]:5.1f} W")
         ax.plot(t, T, label=f"{I:.1f} A")
     ax.set_xlabel("time [s]"); ax.set_ylabel("wire temperature [C]"); ax.grid(alpha=.3); ax.legend(title="current")
-    plt.tight_layout(); plt.savefig(root / "figs" / "heating_free_wire.png", dpi=140)
+    plt.tight_layout(); plt.savefig(root / "docs" / "figures" / "ansys" / "heating_free_wire.png", dpi=140)

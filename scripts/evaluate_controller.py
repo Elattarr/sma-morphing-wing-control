@@ -27,6 +27,10 @@ I_MAX = float(os.environ["SMA_IMAX"]) if "SMA_IMAX" in os.environ else None     
 NOM = SMAParams(d=D_MM * 1e-3, **({} if I_MAX is None else dict(Imax=I_MAX)))
 SIG = float(os.environ.get("SMA_SIG", "250.0"))                    # MPa, stress at full extension (preload); controller knows it
 TS = 0.05
+# Stall threshold before the first stroke is learned: T_limit_model - 2.5 K. With A_f,max = T_limit_model the check needed T1 > T_limit_model + 5 K,
+# above anything the controller allows itself before it gives up (it stops at about T_limit + 3 K), so a jammed wire or a frozen position sensor
+# was never caught. A_f,max is passed 7.5 K lower, which with stall_dT = 5 K puts the threshold 2.5 K below the limit.
+STALL_BELOW_LIMIT = 7.5
 K_SPRING = float(os.environ["SMA_SPRING_K"]) if "SMA_SPRING_K" in os.environ else None      # N/mm, None = constant stress
 OVERSHOOT_EXIT = "SMA_NO_OVERSHOOT_EXIT" not in os.environ
 GUARD = "SMA_NO_GUARD" not in os.environ                  # independent safety monitor between controller and plant
@@ -216,7 +220,7 @@ def sequence(targets=(1.0, 0.5, 0.8, 0.0), hold_s=30.0, t_max=5000.0, p_true=Non
             Tm, d = guard.sense(Tm, d, w)
         I = ctl.step(tgt, Tm, d)
         if guard and cfg.heat_only and guard.mon.stroke_mm is None:           # no homing: the stall check works from the model stroke, then from the learned one
-            guard.mon.set_calibration(abs(ctl.st.strain(0.0) - ctl.st.strain(1.0)) * ctl.p.L * 1e3, ctl.T_limit_model)
+            guard.mon.set_calibration(abs(ctl.st.strain(0.0) - ctl.st.strain(1.0)) * ctl.p.L * 1e3, ctl.T_limit_model - STALL_BELOW_LIMIT)
         if guard and cfg.heat_only and ctl.cal is not None and not getattr(guard, "_cal_done", False):
             guard._cal_done = True
             guard.mon.set_calibration(abs(ctl.cal.eps_ext - ctl.cal.eps_con) * ctl.p.L * 1e3, ctl.cal.Af)

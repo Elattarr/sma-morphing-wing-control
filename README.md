@@ -73,7 +73,7 @@ ctl = CycleController(P, 2.2, cfg_heat_only(P, Ts=0.05), K_spring=BiasSpring(2.2
 - No hardware validation; gains and safety thresholds are starting points for a bench.
 - Heating only. The wing return path is not controlled or modelled.
 - Thermal model is air convection, not wire embedded in CFRP.
-- The TE map and recovery window come from one ANSYS load case.
+- The TE map and recovery window come from ANSYS simulations.
 - Two stress tests fail (5 K window spread; 25 % tail over 20 K); both are much wider than the ANSYS data.
 
 ## Reference

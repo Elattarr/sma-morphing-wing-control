@@ -1,6 +1,6 @@
 """Map between the wire recovery r (0 = extended ... 1 = fully recovered, measured at the wire end) and the trailing-edge deflection in mm.
 
-Default points: ANSYS Up 40 mm run (2026-10-30, heating 22 -> 80 C, docs/ansys_up40_recovery.csv). TE deflection is the ANSYS directional deformation
+Default points: ANSYS Up 40 mm run (2026-10-30, heating 22 -> 80 C, data/ansys_up40_recovery.csv). TE deflection is the ANSYS directional deformation
 (negative = TE down) in the coordinates of that run: r = 0 is the PRELOADED state at 22 C (-6.63 mm, not 0), r = 1 is -42.24 mm, so the useful travel is 35.6 mm.
 r is the recovery of the wire-end displacement (mean of min / max of the end-of-wire output, stroke 6.48 mm). The relation is concave: TE lags the wire end
 by up to 13 % of the stroke at r = 0.2-0.4 (ANSYS data), so the old linear map was wrong in the middle of the stroke.

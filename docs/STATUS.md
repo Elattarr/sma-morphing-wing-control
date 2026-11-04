@@ -7,13 +7,13 @@ Date of this status: 2026-10-30. Scope: free one-way wire pulled back by a bias 
 | Item | Where | Evidence |
 |---|---|---|
 | Plant: MEFF ratchet + energy balance + bias spring (coupled stress), parallel-element plant for wide windows / tails / sub-loops | `src/sma_control/{cycle_plant,spring,elements}.py` | `tests/test_spring.py`, `tests/test_elements.py` |
-| Bidirectional position controller (hold / up / down), overshoot exit, adaptive limit and hold temperature | `cycle_controller.py` | `docs/eval_*` |
+| Bidirectional position controller (hold / up / down), overshoot exit, adaptive limit and hold temperature | `cycle_controller.py` | `docs/results/eval_*` |
 | Homing / calibration (power-up cycle): measures stroke end points and A_s, A_f, T_fs, T_fe; corrects wrong stress, wide windows; refuses when the preload is too low | `HomingRoutine` | `tests/test_homing.py`, robust and struct tables |
-| Independent safety monitor: hard over-temperature (two channels), channel disagreement, energy-balance envelope, stall, current mismatch, wire resistance, watchdog, latching relay | `safety.py` | `tests/test_safety.py`, `docs/eval_*_safety.txt` (fault injection, with/without monitor), zero false trips in every other run |
-| Parameter identification from bench data (m c, h S, thermocouple lag, R_M, R_A, latent heat) | `identify.py`, `scripts/identify_bench.py` | `docs/identify_bench.txt`, `tests/test_identify.py` |
+| Independent safety monitor: hard over-temperature (two channels), channel disagreement, energy-balance envelope, stall, current mismatch, wire resistance, watchdog, latching relay | `safety.py` | `tests/test_safety.py`, `docs/results/eval_*_safety.txt` (fault injection, with/without monitor), zero false trips in every other run |
+| Parameter identification from bench data (m c, h S, thermocouple lag, R_M, R_A, latent heat) | `identify.py`, `scripts/identify_bench.py` | `docs/results/identify_bench.txt`, `tests/test_identify.py` |
 | Bench protocol and hardware specification with go/no-go gates | `docs/BENCH_PROTOCOL.md` | - |
 | C99 port of controller, homing and monitor; replay of logged Python runs sample by sample (double: identical to 4e-14 A; single: same trips and calibration, Tfe within 0.15 K / 1.5 K noisy) | `c/` | `tests/test_c_port.py` |
-| Other alloys with unchanged gains (12 MEFF variants, nominal and own constants) | `scripts/evaluate_materials.py` | `docs/eval_thin_materials.txt`, `tests/test_materials.py` |
+| Other alloys with unchanged gains (12 MEFF variants, nominal and own constants) | `scripts/evaluate_materials.py` | `docs/results/eval_thin_materials.txt`, `tests/test_materials.py` |
 
 ## Not done (needs the real wire or is outside this stage)
 
@@ -44,7 +44,7 @@ python scripts/export_replay.py out/ && make -C c && c/replay out/nominal.txt
 
 ## Embedded-wire plant (first run, 2026-10-30)
 
-Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at the wire (derived from the thesis ANSYS Up 40 mm run, force 7 N -> 48 N for 3.27 % recovery; assumes the spring acts in parallel with the structure at the wire end), preload 250 MPa (785 N), current limit 35 A, ambient convection h = 30 W/m2K (the real heat loss into the CFRP is unknown). Results: `docs/eval_wing_*.txt`, figures `docs/figs_wing/`.
+Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at the wire (derived from the thesis ANSYS Up 40 mm run, force 7 N -> 48 N for 3.27 % recovery; assumes the spring acts in parallel with the structure at the wire end), preload 250 MPa (785 N), current limit 35 A, ambient convection h = 30 W/m2K (the real heat loss into the CFRP is unknown). Results: `docs/results/eval_wing_*.txt`, figures `docs/figures/wing/`.
 
 - Windows with the spring: A_s 87.3, A_f 91.8, T_fs 32.2, T_fe 27.7 C (thesis ANSYS without spring: about 51-55 C).
 - Contraction 7 s to full stroke at 35 A, peak 92 C, 350 J; extension 90-380 s (cooling limited).
@@ -57,7 +57,7 @@ Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at 
 Plant: 2 mm × 200 mm NiTi, structure only (6.4 N/mm at the wire, 7 N = 2.2 MPa preload), no bias spring, 35 A limit, no homing
 (homing would use the one-way stroke). TE map: from the ANSYS Up 40 run (see 'ANSYS comparison' below), not linear. Code: `cfg_heat_only` in
 `cycle_controller.py` (no 'down' mode, hold = power off, pre-heat to A_s − 3 K, 1 K/s temperature creep until motion is seen, then
-position loop Kr 8/s, reference rate 0.1/s); harness `scripts/evaluate_heatonly.py`; results `docs/eval_heatonly_*.txt`, `docs/figs_wing/heatonly_*.png`.
+position loop Kr 8/s, reference rate 0.1/s); harness `scripts/evaluate_heatonly.py`; results `docs/results/eval_heatonly_*.txt`, `docs/figures/wing/heatonly_*.png`.
 All of it is model vs model (verification), nothing validated.
 
 What the runs show (default preset, regenerated 2026-10-30 after the last fixes; older numbers such as "14 of 17" are superseded):
@@ -86,7 +86,7 @@ safety monitor → permitted current and relay; untested on hardware), C port (`
 (nominal, 4 K spread, noisy, 10 %-short wire with learner, two fault injections); float build agrees on decisions, current differs by ≤ 3e-3 A.
 Tests: `tests/test_heat_only_unit.py` (12 behaviour tests), `tests/test_heat_only.py`, heat-only cases in `tests/test_c_port.py`; full suite 112 passed, 1 xfailed.
 
-ANSYS comparison (2026-10-30, run heating 22 → 80 °C, `docs/ansys_up40_recovery.csv`; recovery r from the wire-end displacement, stroke 6.48 mm; model stroke 6.48 mm):
+ANSYS comparison (2026-10-30, run heating 22 → 80 °C, `data/ansys_up40_recovery.csv`; recovery r from the wire-end displacement, stroke 6.48 mm; model stroke 6.48 mm):
 
 | r | model T [°C] | ANSYS TE [°C] | ANSYS wire end [°C] |
 |---|---|---|---|

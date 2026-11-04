@@ -1,7 +1,7 @@
 """Figure: ANSYS Up 40 mm recovery vs the controller model and the fitted plant, the TE map, and the staircase on the fitted plant.
 
 PYTHONPATH=src:scripts python scripts/plot_ansys_comparison.py [out.png]
-Needs docs/ansys_up40_recovery.csv (T, wire-end displacement, TE deflection, wire recovery from the ANSYS run).
+Needs data/ansys_up40_recovery.csv (T, wire-end displacement, TE deflection, wire recovery from the ANSYS run).
 """
 import sys
 from pathlib import Path
@@ -34,7 +34,7 @@ def quasi_static(P, st, Tg):
 
 def main(out):
     P = SMAParams(d=2e-3, Imax=35.0)
-    a = pd.read_csv(ROOT / "docs/ansys_up40_recovery.csv")
+    a = pd.read_csv(ROOT / "data/ansys_up40_recovery.csv")
     m = a["T_C"] >= 48
     Tg = np.arange(48, 70, 0.05)
     rf, rs = quasi_static(P, FIT, Tg), quasi_static(P, dict(spread_K=0.0), Tg)
@@ -60,4 +60,4 @@ def main(out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs/figs_wing/heatonly_ansys_comparison.png"))
+    main(sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs/figures/wing/heatonly_ansys_comparison.png"))

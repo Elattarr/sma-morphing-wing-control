@@ -43,7 +43,7 @@ Result file: the table printed by the script. Summary of what it showed:
 
 ## Full-cycle controller, safety layer, identification, C port (added with the bias-spring work)
 
-All numbers below are design choices or assumptions; none was measured on a real wire. Evaluation files: `docs/eval_*.txt`.
+All numbers below are design choices or assumptions; none was measured on a real wire. Evaluation files: `docs/results/eval_*.txt`.
 
 | Item | Value | Tag | Replace with |
 |---|---|---|---|

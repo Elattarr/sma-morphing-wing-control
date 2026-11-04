@@ -2,28 +2,39 @@
 
 Controller and plant simulation for NiTi shape-memory-alloy (SMA) wire actuation, written for a morphing-wing master thesis (NACA 2412, 1000 mm chord, one 2 mm × 200 mm wire embedded in the airfoil).
 
-**Status: simulation-verified only. Nothing is validated on a real wire or wing.** Everything in `docs/eval_*.txt` is model against model, or model against ANSYS (itself a simulation). Read `docs/STATUS.md` for what is done, what failed and the limits before you trust any number.
+**Status: simulation-verified only. Nothing is validated on a real wire or wing.** Everything in `docs/results/eval_*.txt` is model against model, or model against ANSYS (itself a simulation). Read `docs/STATUS.md` for what is done, what failed and the limits before you trust any number.
 
-## What is in here
+## Repository layout
+
+```
+src/sma_control/   library: plant, controller, safety monitor, TE map, hardware interface
+c/                 portable C99 port (controller, homing, safety monitor) + replay test
+tests/             114 tests (Python, plus Python-vs-C replay)
+scripts/           evaluations, figure scripts, MEFF and thermal studies
+data/              ANSYS exports and constants used for fitting
+docs/
+  STATUS.md        read first: done, not done, known limits
+  ASSUMPTIONS.md   every assumed number
+  BENCH_PROTOCOL.md commissioning gates for the first hardware test
+  results/         eval_*.txt and other script outputs
+  figures/         plots (ansys, const, spring, thin, wing, and the numbered figures)
+  notes/           PLAN, requirements, MEFF window findings
+hardware/          wiring diagram, pin table, drive circuit (design only)
+archive/           first demo version and old figures, kept for history
+```
 
 | Part | What it is |
 |---|---|
-| `src/sma_control/` | Plant (MEFF uniaxial reduction, bias spring, parallel-element plant with window spread and tail), cycle controller, safety monitor, TE map, hardware interface |
-| `src/sma_control/cycle_controller.py` | Two controllers in one class: the original bias-spring cycle controller with homing, and the **heat-only (one-way) controller** for the embedded wire (`cfg_heat_only`): temperature creep into the transformation window, then a slow position loop; no spring, no return; first-stroke learner; fault states |
-| `src/sma_control/safety.py` | Independent monitor between controller and power stage: over-temperature, thermocouple disagreement, energy-balance envelope, frozen thermocouple, stall, current mismatch, resistance, watchdog |
-| `src/sma_control/te_map.py` | Wire recovery r ↔ trailing-edge deflection in mm, from the ANSYS Up 40 mm run (concave, not linear) |
-| `src/sma_control/hardware_io.py` | `RigIO` interface and one control-loop step; **you** implement ADC / DAC / relay in a subclass (untested on hardware) |
-| `c/` | Portable C99 port (controller, homing, safety monitor), replay-tested against Python (`make -C c`) |
-| `scripts/` | Evaluations and figure scripts; `evaluate_heatonly.py` is the heat-only evaluation |
-| `docs/` | `STATUS.md` (read first), `ASSUMPTIONS.md` (every assumed number), `BENCH_PROTOCOL.md`, `eval_*.txt` results, `figs_*` figures, `ansys_up40_recovery.csv` |
-| `data/` | ANSYS exports used for fitting |
-| `tests/` | 112 tests, including Python-vs-C replay comparisons |
+| `src/sma_control/cycle_controller.py` | Two controllers in one class: the bias-spring cycle controller with homing, and the **heat-only (one-way) controller** for the embedded wire (`cfg_heat_only`): temperature creep into the transformation window, then a slow position loop; no spring, no return; first-stroke learner; fault states |
+| `src/sma_control/safety.py` | Independent monitor between controller and power stage, 10 checks: over-temperature, thermocouple disagreement, energy-balance envelope, stall, current mismatch, resistance, watchdog, sensor range, frozen thermocouple, frozen position sensor |
+| `src/sma_control/te_map.py` | Wire recovery r to trailing-edge deflection in mm, from the ANSYS Up 40 mm run (concave, not linear) |
+| `src/sma_control/hardware_io.py` | `RigIO` interface and one control-loop step; you implement ADC / PWM / relay in a subclass (untested on hardware) |
 
 ## Install and test
 
 ```bash
-git clone https://github.com/Elattarr/Standalone-SMA-Wire-Control.git
-cd Standalone-SMA-Wire-Control
+git clone https://github.com/Elattarr/sma-morphing-wing-control.git
+cd sma-morphing-wing-control
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python -m pytest                                        # about 2 minutes; C-port tests need gcc and are skipped without it
@@ -44,7 +55,7 @@ PYTHONPATH=src python scripts/evaluate_heatonly.py sensors
 PYTHONPATH=src python scripts/evaluate_heatonly.py safety    # 30 injected faults
 ```
 
-Each section prints a table; the committed outputs are `docs/eval_heatonly_*.txt`.
+Each section prints a table; the committed outputs are `docs/results/eval_heatonly_*.txt`.
 
 ## Use the heat-only controller
 

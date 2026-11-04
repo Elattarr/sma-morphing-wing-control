@@ -23,4 +23,4 @@ ax[0].legend(loc="lower left", fontsize=8); ax[0].set_title("Heating after force
 ax[1].set_title("Zoom on recovery window", fontsize=10)
 ax[1].annotate(f"$A_s$ = {As:.1f}", (As, 3.3), xytext=(-48, 0), textcoords="offset points", fontsize=9)
 ax[1].annotate(f"$A_f$ = {Af:.1f}", (Af, 3.3), xytext=(4, 0), textcoords="offset points", fontsize=9)
-plt.tight_layout(); plt.savefig(root / "figs" / "fig4_5_new_preview.png", dpi=170)
+plt.tight_layout(); plt.savefig(root / "docs" / "figures" / "ansys" / "fig4_5_new_preview.png", dpi=170)

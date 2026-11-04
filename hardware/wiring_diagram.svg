@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1180" viewBox="0 0 1900 1180" font-family="Helvetica, Arial, sans-serif">
+<rect width="1900" height="1180" fill="#fff"/>
+<text x="30" y="36" font-size="26" fill="#111" text-anchor="start" font-weight="700">SMA drive: wiring diagram with real parts</text>
+<text x="30" y="58" font-size="14" fill="#b91c1c" text-anchor="start">DESIGN ONLY. Not built, not simulated in SPICE. Red = heating current (up to 35 A), blue/green = signals. Part values marked * are my choices, not checked.</text>
+<rect x="40" y="330" width="170" height="230" rx="5" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>
+<text x="125" y="365" font-size="16" fill="#111" text-anchor="middle" font-weight="700">DC supply</text>
+<text x="125" y="390" font-size="15" fill="#111" text-anchor="middle">5 V / 40 A</text>
+<text x="125" y="412" font-size="12" fill="#111" text-anchor="middle">*Mean Well RSP-200-5</text>
+<text x="125" y="430" font-size="12" fill="#555" text-anchor="middle">(verify rating)</text>
+<text x="60" y="480" font-size="22" fill="#c0392b" text-anchor="start" font-weight="700">+</text>
+<text x="60" y="545" font-size="22" fill="#111" text-anchor="start" font-weight="700">−</text>
+<polyline points="210,472 260,472 260,200 330,200" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<rect x="330" y="182" width="90" height="36" rx="5" fill="#fef3c7" stroke="#334155" stroke-width="2"/>
+<text x="375" y="205" font-size="13" fill="#111" text-anchor="middle" font-weight="700">F1 40 A</text>
+<text x="375" y="174" font-size="12" fill="#111" text-anchor="middle">fast blade fuse*</text>
+<polyline points="420,200 520,200" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<rect x="520" y="178" width="100" height="44" rx="5" fill="#dbeafe" stroke="#1e3a8a" stroke-width="2"/>
+<text x="570" y="205" font-size="13" fill="#111" text-anchor="middle" font-weight="700">K1 contact</text>
+<text x="570" y="170" font-size="12" fill="#111" text-anchor="middle">≥40 A DC, 12 V coil*</text>
+<polyline points="620,200 760,200" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<circle cx="700" cy="200" r="4.5" fill="#c0392b"/>
+<polyline points="700,200 700,260" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="680,260 720,260" fill="none" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="680,272 720,272" fill="none" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="700,272 700,700" fill="none" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<text x="730" y="270" font-size="12" fill="#111" text-anchor="start">C1 2×1000 µF*</text>
+<text x="730" y="288" font-size="12" fill="#111" text-anchor="start">+ ceramics at FETs</text>
+<polyline points="760,200 1130,200" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<circle cx="900" cy="200" r="4.5" fill="#c0392b"/>
+<polyline points="900,200 900,240" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
+<rect x="850" y="240" width="100" height="120" rx="5" fill="#fff7ed" stroke="#9a3412" stroke-width="2"/>
+<text x="900" y="278" font-size="16" fill="#111" text-anchor="middle" font-weight="700">Q2</text>
+<text x="900" y="298" font-size="12" fill="#111" text-anchor="middle">BSC014N04LS</text>
+<text x="900" y="314" font-size="12" fill="#111" text-anchor="middle">freewheel</text>
+<text x="900" y="330" font-size="11" fill="#555" text-anchor="middle">D=rail S=SW</text>
+<polyline points="900,360 900,400" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="900,400 1130,400" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<circle cx="900" cy="400" r="4.5" fill="#c0392b"/>
+<circle cx="1130" cy="400" r="4.5" fill="#c0392b"/>
+<text x="1000" y="390" font-size="13" fill="#c0392b" text-anchor="start" font-weight="700">SW node</text>
+<polyline points="1130,200 1130,240" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<rect x="1085" y="240" width="90" height="50" rx="5" fill="#fde68a" stroke="#92400e" stroke-width="2"/>
+<text x="1130" y="262" font-size="13" fill="#111" text-anchor="middle" font-weight="700">L1 ≈10 µH</text>
+<text x="1130" y="280" font-size="12" fill="#111" text-anchor="middle">≥60 A sat*</text>
+<rect x="1085" y="310" width="90" height="70" rx="5" fill="#fed7aa" stroke="#9a3412" stroke-width="2"/>
+<text x="1130" y="335" font-size="14" fill="#111" text-anchor="middle" font-weight="700">NiTi wire</text>
+<text x="1130" y="353" font-size="12" fill="#111" text-anchor="middle">Ø2 × 200 mm</text>
+<text x="1130" y="370" font-size="12" fill="#111" text-anchor="middle">~0.1 Ω</text>
+<polyline points="1130,290 1130,310" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="1130,380 1130,400" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="1130,400 1130,430" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<rect x="1080" y="430" width="100" height="120" rx="5" fill="#fff7ed" stroke="#9a3412" stroke-width="2"/>
+<text x="1130" y="468" font-size="16" fill="#111" text-anchor="middle" font-weight="700">Q1</text>
+<text x="1130" y="488" font-size="12" fill="#111" text-anchor="middle">BSC014N04LS</text>
+<text x="1130" y="504" font-size="12" fill="#111" text-anchor="middle">low side</text>
+<text x="1130" y="520" font-size="11" fill="#555" text-anchor="middle">D=SW S→shunt</text>
+<polyline points="1130,550 1130,570" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<rect x="1100" y="570" width="60" height="34" rx="5" fill="#fde68a" stroke="#92400e" stroke-width="2"/>
+<text x="1130" y="592" font-size="13" fill="#111" text-anchor="middle" font-weight="700">R1 1 mΩ</text>
+<text x="1180" y="562" font-size="12" fill="#111" text-anchor="start">4-terminal, ≥5 W, 1 %*</text>
+<polyline points="1130,604 1130,700" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="70,700 1500,700" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+<text x="70" y="724" font-size="13" fill="#111" text-anchor="start" font-weight="700">GND star point (supply −, C1, shunt low side, MCU GND)</text>
+<polyline points="60,540 60,700 70,700" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+<circle cx="700" cy="700" r="4.5" fill="#111"/>
+<circle cx="1130" cy="700" r="4.5" fill="#111"/>
+<polyline points="1100,587 1070,587" fill="none" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
+<text x="1066" y="591" font-size="12" fill="#2563eb" text-anchor="end" font-weight="700">S+</text>
+<polyline points="1160,587 1190,587" fill="none" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
+<text x="1194" y="591" font-size="12" fill="#2563eb" text-anchor="start" font-weight="700">S−</text>
+<rect x="1330" y="330" width="230" height="200" rx="5" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+<text x="1445" y="358" font-size="14" fill="#111" text-anchor="middle" font-weight="700">U1  UCC27211D (SOIC-8)</text>
+<text x="1445" y="376" font-size="12" fill="#111" text-anchor="middle">TTL inputs, VDD 8–17 V</text>
+<text x="1340" y="395" font-size="12" fill="#111" text-anchor="start">1 VDD</text>
+<text x="1340" y="420" font-size="12" fill="#111" text-anchor="start">2 HB</text>
+<text x="1340" y="445" font-size="12" fill="#111" text-anchor="start">3 HO</text>
+<text x="1340" y="470" font-size="12" fill="#111" text-anchor="start">4 HS</text>
+<text x="1550" y="395" font-size="12" fill="#111" text-anchor="end">5 HI</text>
+<text x="1550" y="420" font-size="12" fill="#111" text-anchor="end">6 LI</text>
+<text x="1550" y="445" font-size="12" fill="#111" text-anchor="end">7 VSS</text>
+<text x="1550" y="470" font-size="12" fill="#111" text-anchor="end">8 LO</text>
+<text x="1445" y="515" font-size="12" fill="#b91c1c" text-anchor="middle">no built-in dead time</text>
+<polyline points="1330,441 1300,441" fill="none" stroke="#16a34a" stroke-width="2" stroke-linejoin="round"/>
+<text x="1262" y="437" font-size="12" fill="#16a34a" text-anchor="middle" font-weight="700">HO_G</text>
+<polyline points="940,320 975,320" fill="none" stroke="#16a34a" stroke-width="2" stroke-linejoin="round"/>
+<text x="985" y="324" font-size="12" fill="#16a34a" text-anchor="start" font-weight="700">HO_G (Rg 2.2 Ω*)</text>
+<polyline points="1330,466 1300,466 1300,400 1130,400" fill="none" stroke="#16a34a" stroke-width="2" stroke-linejoin="round"/>
+<text x="1230" y="392" font-size="12" fill="#16a34a" text-anchor="start">HS → SW</text>
+<polyline points="1560,466 1600,466" fill="none" stroke="#16a34a" stroke-width="2" stroke-linejoin="round"/>
+<text x="1606" y="470" font-size="12" fill="#16a34a" text-anchor="start" font-weight="700">LO_G</text>
+<polyline points="1180,490 1215,490" fill="none" stroke="#16a34a" stroke-width="2" stroke-linejoin="round"/>
+<text x="1186" y="512" font-size="12" fill="#16a34a" text-anchor="start" font-weight="700">LO_G (Rg 2.2 Ω*)</text>
+<text x="1340" y="545" font-size="12" fill="#111" text-anchor="start">D1 BAT54* HB←VDD, C2 1 µF HB–HS</text>
+<text x="1340" y="562" font-size="12" fill="#111" text-anchor="start">C3 1 µF VDD–VSS, close to pins</text>
+<text x="1340" y="579" font-size="12" fill="#111" text-anchor="start">VSS → Q1 source (Kelvin), VDD ← +12 V</text>
+<rect x="1600" y="330" width="200" height="40" rx="5" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>
+<text x="1700" y="355" font-size="13" fill="#111" text-anchor="middle" font-weight="700">12 V / 1 A supply*</text>
+<rect x="1300" y="570" width="380" height="100" rx="5" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2"/>
+<text x="1490" y="598" font-size="14" fill="#111" text-anchor="middle" font-weight="700">U2  INA240A2 (gain 50, CM −4…80 V)</text>
+<text x="1490" y="618" font-size="12" fill="#111" text-anchor="middle">IN+ ← S+ , IN− ← S− (twisted pair), REF1,REF2 → GND*</text>
+<text x="1490" y="636" font-size="12" fill="#111" text-anchor="middle">V+ ← 3.3 V,  OUT → 100 Ω / 1 nF → PA0</text>
+<text x="1490" y="654" font-size="12" fill="#555" text-anchor="middle">35 A → 35 mV → 1.75 V</text>
+<rect x="40" y="780" width="420" height="330" rx="5" fill="#ecfdf5" stroke="#15803d" stroke-width="2"/>
+<text x="250" y="810" font-size="15" fill="#111" text-anchor="middle" font-weight="700">NUCLEO-G474RE (STM32G474RE)</text>
+<text x="55" y="840" font-size="13" fill="#111" text-anchor="start" font-weight="700">PA8  HRTIM1_CHA1 (AF13)</text>
+<text x="55" y="854" font-size="12" fill="#374151" text-anchor="start">→ U1 pin 6 LI  (Q1 on)</text>
+<text x="55" y="870" font-size="13" fill="#111" text-anchor="start" font-weight="700">PA9  HRTIM1_CHA2 (AF13)</text>
+<text x="55" y="884" font-size="12" fill="#374151" text-anchor="start">→ U1 pin 5 HI  (Q2 on, after dead time)</text>
+<text x="55" y="900" font-size="13" fill="#111" text-anchor="start" font-weight="700">PA0  ADC1_IN1</text>
+<text x="55" y="914" font-size="12" fill="#374151" text-anchor="start">← U2 OUT, sampled mid on-time</text>
+<text x="55" y="930" font-size="13" fill="#111" text-anchor="start" font-weight="700">PA1  ADC1_IN2</text>
+<text x="55" y="944" font-size="12" fill="#374151" text-anchor="start">← laser 4–20 mA over 150 Ω</text>
+<text x="55" y="960" font-size="13" fill="#111" text-anchor="start" font-weight="700">PB13/14/15  SPI2</text>
+<text x="55" y="974" font-size="12" fill="#374151" text-anchor="start">SCK / MISO / MOSI → U3, U4</text>
+<text x="55" y="990" font-size="13" fill="#111" text-anchor="start" font-weight="700">PB12, PB1  GPIO</text>
+<text x="55" y="1004" font-size="12" fill="#374151" text-anchor="start">CS for U3 (T1), U4 (T2)</text>
+<text x="55" y="1020" font-size="13" fill="#111" text-anchor="start" font-weight="700">PB0  GPIO</text>
+<text x="55" y="1034" font-size="12" fill="#374151" text-anchor="start">→ Q3 gate (relay coil driver)</text>
+<text x="55" y="1050" font-size="13" fill="#111" text-anchor="start" font-weight="700">PA2/PA3  LPUART1</text>
+<text x="55" y="1064" font-size="12" fill="#374151" text-anchor="start">ST-LINK VCP → laptop USB</text>
+<rect x="1330" y="997" width="197.20000000000002" height="19" rx="3" fill="#fff" stroke="#16a34a" stroke-width="1.5"/>
+<text x="1335" y="1010" font-size="12" fill="#16a34a" text-anchor="start" font-weight="700">net PWM_LO: PA8 → U1 pin 6</text>
+<rect x="1330" y="1023" width="197.20000000000002" height="19" rx="3" fill="#fff" stroke="#16a34a" stroke-width="1.5"/>
+<text x="1335" y="1036" font-size="12" fill="#16a34a" text-anchor="start" font-weight="700">net PWM_HI: PA9 → U1 pin 5</text>
+<rect x="1330" y="1049" width="182.8" height="19" rx="3" fill="#fff" stroke="#6d28d9" stroke-width="1.5"/>
+<text x="1335" y="1062" font-size="12" fill="#6d28d9" text-anchor="start" font-weight="700">net ISENSE: U2 OUT → PA0</text>
+<rect x="1330" y="1075" width="182.8" height="19" rx="3" fill="#fff" stroke="#1e3a8a" stroke-width="1.5"/>
+<text x="1335" y="1088" font-size="12" fill="#1e3a8a" text-anchor="start" font-weight="700">net RELAY: PB0 → Q3 gate</text>
+<rect x="500" y="780" width="380" height="150" rx="5" fill="#fefce8" stroke="#a16207" stroke-width="2"/>
+<text x="690" y="806" font-size="14" fill="#111" text-anchor="middle" font-weight="700">U3, U4  MAX31856 (TSSOP-14), 3.3 V</text>
+<text x="515" y="830" font-size="12" fill="#111" text-anchor="start">SCK/SDI/SDO shared on SPI2; CS: U3 ← PB12, U4 ← PB1</text>
+<text x="515" y="850" font-size="12" fill="#111" text-anchor="start">Type K, 0.25 mm, junction insulated from the wire</text>
+<text x="515" y="870" font-size="12" fill="#111" text-anchor="start">(inputs protected to ±45 V, but wire sits ~2 V above GND:</text>
+<text x="515" y="888" font-size="12" fill="#111" text-anchor="start"> a grounded or touching junction shorts the wire to the amp)</text>
+<text x="515" y="912" font-size="12" fill="#555" text-anchor="start">U3 → T1 at 650 mm?  U4 → T2  (positions: see bench plan)</text>
+<rect x="500" y="950" width="380" height="100" rx="5" fill="#dbeafe" stroke="#1e3a8a" stroke-width="2"/>
+<text x="690" y="976" font-size="14" fill="#111" text-anchor="middle" font-weight="700">K1 coil drive</text>
+<text x="515" y="998" font-size="12" fill="#111" text-anchor="start">Q3 2N7002* (gate ← PB0, 10 kΩ pull-down), coil +12 V</text>
+<text x="515" y="1016" font-size="12" fill="#111" text-anchor="start">D2 1N4007* flyback across the coil</text>
+<text x="515" y="1034" font-size="12" fill="#b91c1c" text-anchor="start">Relay closes only with PWM_LO low; opens before anything else</text>
+<rect x="900" y="950" width="380" height="100" rx="5" fill="#fce7f3" stroke="#9d174d" stroke-width="2"/>
+<text x="1090" y="976" font-size="14" fill="#111" text-anchor="middle" font-weight="700">Laser displacement sensor, 4–20 mA out*</text>
+<text x="915" y="998" font-size="12" fill="#111" text-anchor="start">loop 24 V* → sensor → 150 Ω to GND → PA1  (0.6–3.0 V)</text>
+<text x="915" y="1016" font-size="12" fill="#111" text-anchor="start">RC 1 kΩ / 10 nF before PA1</text>
+<text x="915" y="1034" font-size="12" fill="#b91c1c" text-anchor="start">range ≥10 mm; beam on wire end, not on the TE</text>
+<text x="900" y="1110" font-size="12" fill="#374151" text-anchor="start">Single-point grounding: only the shunt low side, C1 and supply − meet at one copper pour; Kelvin sense traces S+/S− run as a pair to U2.</text>
+<text x="900" y="1130" font-size="12" fill="#374151" text-anchor="start">Status of each part number is in the table: "checked" means I read it in a datasheet this session, otherwise it is a placeholder class.</text>
+</svg>

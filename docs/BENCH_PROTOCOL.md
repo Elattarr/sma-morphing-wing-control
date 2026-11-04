@@ -1,6 +1,6 @@
 # Bench protocol and hardware specification: current-driven one-way SMA wire
 
-Status: everything in `docs/eval_*.txt` is **verification** (controller vs. the MEFF model it was built from, plus structural-mismatch plants).
+Status: everything in `docs/results/eval_*.txt` is **verification** (controller vs. the MEFF model it was built from, plus structural-mismatch plants).
 Nothing has been **validated** on a real wire. This document is the path from the first to the second.
 
 Reference configuration (what the evaluation assumed): 0.5 mm wire, 200 mm free length, bias spring 1.25 N/mm, preload at the extended end

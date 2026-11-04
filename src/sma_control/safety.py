@@ -21,6 +21,7 @@ Checks (each one targets a failure the controller cannot see by itself):
   6. WIRE RESISTANCE         V/I outside [R_min, R_max] (broken wire, loose contact)                           -> 'resistance'
   7. WATCHDOG                heartbeat counter not changing (controller hung, current command frozen)          -> 'watchdog'
   9. FROZEN THERMOCOUPLE     T1 bit-identical for t_tc_freeze while heated (I_meas > 0.3 A) or hot (> T_amb + 5 K): a real reading always has noise    -> 'tc_frozen'
+  10. FROZEN POSITION SENSOR d bit-identical for t_d_freeze of heated time (I_meas > 0.3 A, unpowered pauses do not reset it); only valid when the sensor noise exceeds its resolution -> 'd_frozen'
   8. SENSOR RANGE            T1 or T2 outside [-20, 250] C (open circuit rails)                                -> 'sensor_range'
 
 [ASSUMED] bounds: convection coefficient h in [h_min, h_max] = [5, 100] W/m2/K, ambient within +/- 10 K of the value at arming.
@@ -50,6 +51,7 @@ class SafetyCfg:
     t_I_mismatch: float = 1.0        # s
     R_tol: float = 0.45              # relative tolerance on the wire resistance
     t_tc_freeze: float = 10.0        # s   unchanged T1 reading while the wire is heated or hot
+    t_d_freeze: float = 5.0          # s   unchanged position reading while the wire is heated; [ASSUMED] the sensor noise exceeds its resolution (0 disables)
     n_freeze: int = 10               # samples with an unchanged heartbeat
     mc_min_frac: float = 0.3         # [ASSUMED] smallest credible m*c as a fraction of the nominal value (c as low as 250 J/kg/K): upper bound
     mc_max_frac: float = 2.0         # [ASSUMED] largest credible m*c (clamps, wires, glue): lower bound
@@ -76,6 +78,7 @@ class SafetyMonitor:
         self._I_prev, self._t_Imis, self._t_hot, self._d_hot0 = 0.0, 0.0, 0.0, None
         self._beat, self._n_same, self._T1_prev, self._T2_prev = None, 0, None, None
         self._T1_frz, self._t_frz = None, 0.0
+        self._d_prev, self._t_dfrz = None, 0.0
         self.stroke_mm, self.Af_max = None, None
 
     def arm(self, T1: float, T2: float | None = None):
@@ -177,6 +180,18 @@ class SafetyMonitor:
         else:
             self._t_frz = 0.0
         self._T1_frz = T1
+
+        # 10: frozen position sensor (exactly the same reading for t_d_freeze while the wire is heated). Needs sensor noise above the
+        # resolution: a quantised sensor can legitimately repeat a value, so measure the laser's noise on the bench before relying on it
+        if d is not None and c.t_d_freeze > 0:
+            if self._d_prev is not None and d == self._d_prev:
+                if I_meas > 0.3:                                    # counts heated time only; an unpowered pause does not clear it
+                    self._t_dfrz += dt
+                    if self._t_dfrz > c.t_d_freeze:
+                        self._trip("d_frozen")
+            else:
+                self._t_dfrz = 0.0
+            self._d_prev = d
 
         # 5: current mismatch
         if I_meas > self._I_prev * (1.0 + c.I_tol_rel) + c.I_tol_abs:

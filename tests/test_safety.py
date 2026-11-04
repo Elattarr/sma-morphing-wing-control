@@ -108,3 +108,25 @@ def test_no_false_trip_in_healthy_homing_and_sequence():
     import evaluate_controller as ev
     L, seg, home = ev.sequence(label="healthy")
     assert len(seg) == 4 and not home["guard"].mon.tripped
+
+
+def test_frozen_position_sensor_counts_heated_time_only():
+    kw = dict(I_cmd=2.0, I_meas=2.0, T1=lambda t: 40.0 + 0.5 * t, T2=lambda t: 40.0 + 0.5 * t, d=3.21)   # same reading every sample
+    m = mon()
+    run(m, 80, **kw)                                     # 4 s heated: not yet
+    assert not m.tripped
+    run(m, 100, I_cmd=0.0, I_meas=0.0, T1=40.0, T2=40.0, d=3.21)   # an unpowered pause must not clear the timer
+    assert not m.tripped
+    run(m, 40, **kw)                                     # 2 s more heated time: past 5 s in total
+    assert m.reason in ("d_frozen", "tc_frozen")
+    m = mon()
+    run(m, 600, d=lambda t: 3.0 + 0.001 * np.sin(40 * t), **{k: v for k, v in kw.items() if k != "d"})   # noise-like variation: never frozen
+    assert m.reason != "d_frozen"
+
+
+def test_stall_threshold_below_controller_limit_is_reachable():
+    """heat-only: A_f,max is passed as T_limit_model - 7.5 K so the stall threshold sits 2.5 K below the limit the controller works to"""
+    m = mon()
+    m.set_calibration(stroke_mm=6.0, Af_max=61.5 - 7.5)
+    run(m, 600, I_cmd=2.0, I_meas=2.0, T1=lambda t: min(60.5, 22.0 + 15 * t), T2=lambda t: min(60.5, 22.0 + 15 * t), d=lambda t: 0.001 * np.sin(30 * t))
+    assert m.reason == "stall"

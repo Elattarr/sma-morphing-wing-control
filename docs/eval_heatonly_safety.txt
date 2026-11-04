@@ -9,9 +9,9 @@ thermocouple frozen                      40 |                   54.2 |          
 thermocouple reads 30 K low               3 |                   54.2 |            tc_disagree     3.1       49.4  ok
 thermocouple reads 30 K low              20 |                   54.2 |            tc_disagree    20.1       51.3  ok
 thermocouple reads 30 K low              40 |                   54.2 |            tc_disagree    40.1       53.3  ok
-position sensor frozen                    3 |                   76.3 |                  stall    28.2       74.6  ok
-position sensor frozen                   20 |                   76.4 |                  stall    43.4       74.5  ok
-position sensor frozen                   40 |                   76.3 |                  stall    74.3       74.7  ok
+position sensor frozen                    3 |                   76.3 |               d_frozen     8.1       53.5  ok
+position sensor frozen                   20 |                   76.4 |               d_frozen    25.1       60.2  ok
+position sensor frozen                   40 |                   76.3 |               d_frozen    54.7       53.8  ok
 controller hangs, current frozen          3 |                  164.6 |               watchdog     3.5       49.8  ok
 controller hangs, current frozen         20 |                  145.2 |               watchdog    20.5       51.7  ok
 controller hangs, current frozen         40 |                   53.3 |               watchdog    40.5       53.3  ok
@@ -31,4 +31,4 @@ thermocouple reads 30 K low [no T2]       3 |                   54.2 |          
 thermocouple reads 30 K low [no T2]      20 |                   54.2 |           tc_reads_low    20.1       51.3  ok
 thermocouple reads 30 K low [no T2]      40 |                   54.2 |           tc_reads_low    40.1       53.3  ok
 30 of 30 fault runs ended below the trip temperature + 10 K (or never exceeded the trip without the monitor); fail-safe = power off
-safety monitor: TRIPS thermocouple open (reads 0 C): tc_disagree at 3 s; thermocouple frozen: tc_frozen at 13 s; thermocouple reads 30 K low: tc_disagree at 3 s; position sensor frozen: stall at 28 s; controller hangs, current frozen: watchdog at 4 s; power stage stuck on: current_mismatch at 4 s; wire contact fails (R x3): resistance at 3 s; thermocouple open (reads 0 C): tc_reads_low at 3 s; thermocouple reads 30 K low: tc_reads_low at 9 s
+safety monitor: TRIPS thermocouple open (reads 0 C): tc_disagree at 3 s; thermocouple frozen: tc_frozen at 13 s; thermocouple reads 30 K low: tc_disagree at 3 s; position sensor frozen: d_frozen at 8 s; controller hangs, current frozen: watchdog at 4 s; power stage stuck on: current_mismatch at 4 s; wire contact fails (R x3): resistance at 3 s; thermocouple open (reads 0 C): tc_reads_low at 3 s; thermocouple reads 30 K low: tc_reads_low at 9 s

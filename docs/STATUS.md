@@ -69,7 +69,8 @@ What the runs show (default preset, regenerated 2026-10-30 after the last fixes;
   false motion detection at 0.02 mm noise 0/10 seeds, 0.03 mm 1/20, 0.05 mm 4/20. Requirement for the bench: displacement noise ≲ 0.02–0.03 mm on the wire stroke
   (about 0.4 % of 6.5 mm); LVDT/laser on the wire end, not a TE camera. Motion detection defaults (creep_confirm 3, fast_detect 3.0) were chosen by a sweep over the
   robust + sensor sets; they are the least invasive variant, not an optimum.
-- Safety fault injection (30 runs): all end below trip + 10 K; trips: watchdog, current_mismatch, resistance, tc_disagree, tc_reads_low, stall (frozen position sensor at 28 s).
+- Safety fault injection (30 runs): all end below trip + 10 K; trips: watchdog, current_mismatch, resistance, tc_disagree, tc_reads_low, d_frozen (frozen position sensor, caught 5 s of heated time after the freeze at 53–60 °C; it was stall at 28 s and 67 °C).
+  Two gaps found and closed in the hardware review: (1) before the first stroke is learned the stall threshold was T_limit_model + 5 K, above anything the controller allows, so it could never fire; it is now T_limit_model - 2.5 K (`STALL_BELOW_LIMIT` in evaluate_controller.py, 7.5 in c/replay.c). (2) New check 10, `d_frozen`: bit-identical position reading for 5 s of heated time. It is only valid if the sensor noise exceeds its resolution; measure the laser on the bench first (`t_d_freeze = 0` disables it).
   Frozen thermocouple (bit-identical T1 for 10 s while heated or hot) is now caught as `tc_frozen` in all 3 injection times (30 of 30 runs end safe, every injected fault trips); zero false trips in the other
   heat-only sections and in the 112-test suite. A frozen reading that still carries noise-like variation, or a drifting sensor, is not covered.
 - Found and fixed while porting: the stall check counted a hot wire cooling at rest as "no motion" and tripped after the learner stop (wire overshoots to ~65 °C, then cools ≥ 8 s above
@@ -105,3 +106,5 @@ Still open / not validated:
 - Supervisor A_s/A_f 51/69 °C is not consistent with the ANSYS whole-wire window (51–56 °C, tail to 60 °C); thermal model is air convection, not CFRP; resin T_g vs 56–60 °C (up to 76 °C locally) is unchecked.
 - Return mechanism is not in the controller (power off, wait for the displacement sensor, timeout, `begin_reset`); the wing/aero load that would extend the wire is not modelled.
 - The TE map is from one load case; the one-point zero (wire extended at start) is an assumption.
+
+- Known residual (hardware review): a position sensor that freezes MID-STROKE (8 s in the nominal run) makes the controller drive blind at 35 A for about 2 s; the wire finishes the stroke at 65 °C (54 °C normal, 258 J instead of 223 J) and the controller then stops itself. No monitor check can act within 2 s without false trips; the bound is the controller's own limit, below the 75 °C cap.

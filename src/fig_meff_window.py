@@ -2,7 +2,7 @@
 Data: ANSYS standalone 3D wire, heating step (T 22.3 -> 52 C). Lines: closed-form As, Af (Auricchio & Petrini 2004).
   As = T0 + (R - H*eps_L)/beta ,  Af = T0 + R/beta
 """
-import numpy as np, pandas as pd
+import pandas as pd
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pathlib import Path

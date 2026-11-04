@@ -44,7 +44,7 @@ python scripts/export_replay.py out/ && make -C c && c/replay out/nominal.txt
 
 ## Embedded-wire plant (first run, 2026-10-30)
 
-Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at the wire (derived from the thesis ANSYS Up 40 mm run, force 7 N -> 48 N for 3.27 % recovery; assumes the spring acts in parallel with the structure at the wire end), preload 250 MPa (785 N), current limit 35 A, ambient convection h = 30 W/m2K (the real heat loss into the CFRP is unknown). Results: `docs/results/eval_wing_*.txt`, figures `docs/figures/wing/`.
+Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at the wire (derived from the thesis ANSYS Up 40 mm run, force 7 N -> 48 N for 3.27 % recovery; assumes the spring acts in parallel with the structure at the wire end), preload 250 MPa (785 N), current limit 35 A, ambient convection h = 30 W/m2K (the real heat loss into the CFRP is unknown). Results: `docs/results/eval_wing_*.txt`, figures `docs/figures/`.
 
 - Windows with the spring: A_s 87.3, A_f 91.8, T_fs 32.2, T_fe 27.7 C (thesis ANSYS without spring: about 51-55 C).
 - Contraction 7 s to full stroke at 35 A, peak 92 C, 350 J; extension 90-380 s (cooling limited).
@@ -57,7 +57,7 @@ Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at 
 Plant: 2 mm × 200 mm NiTi, structure only (6.4 N/mm at the wire, 7 N = 2.2 MPa preload), no bias spring, 35 A limit, no homing
 (homing would use the one-way stroke). TE map: from the ANSYS Up 40 run (see 'ANSYS comparison' below), not linear. Code: `cfg_heat_only` in
 `cycle_controller.py` (no 'down' mode, hold = power off, pre-heat to A_s − 3 K, 1 K/s temperature creep until motion is seen, then
-position loop Kr 8/s, reference rate 0.1/s); harness `scripts/evaluate_heatonly.py`; results `docs/results/eval_heatonly_*.txt`, `docs/figures/wing/heatonly_*.png`.
+position loop Kr 8/s, reference rate 0.1/s); harness `scripts/evaluate_heatonly.py`; results `docs/results/eval_heatonly_*.txt`, `docs/figures/heatonly_*.png`.
 All of it is model vs model (verification), nothing validated.
 
 What the runs show (default preset, regenerated 2026-10-30 after the last fixes; older numbers such as "14 of 17" are superseded):

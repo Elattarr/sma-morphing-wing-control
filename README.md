@@ -7,20 +7,15 @@ Controller and plant simulation for NiTi shape-memory-alloy (SMA) wire actuation
 ## Repository layout
 
 ```
-src/sma_control/   library: plant, controller, safety monitor, TE map, hardware interface
-c/                 portable C99 port (controller, homing, safety monitor) + replay test
-tests/             114 tests (Python, plus Python-vs-C replay)
-scripts/           evaluations, figure scripts, MEFF and thermal studies
-data/              ANSYS exports and constants used for fitting
-docs/
-  STATUS.md        read first: done, not done, known limits
-  ASSUMPTIONS.md   every assumed number
-  BENCH_PROTOCOL.md commissioning gates for the first hardware test
-  results/         eval_*.txt and other script outputs
-  figures/         plots (ansys, const, spring, thin, wing, and the numbered figures)
-  notes/           PLAN, requirements, MEFF window findings
-hardware/          wiring diagram, pin table, drive circuit (design only)
-archive/           first demo version and old figures, kept for history
+src/sma_control/   the library: plant, controller, safety monitor, TE map, hardware interface
+c/                 C99 port of the controller and monitor, replay-tested against Python
+tests/             114 tests
+scripts/           evaluations (evaluate_heatonly.py is the main one), C-replay export, bench identification
+data/              ANSYS exports used for fitting
+docs/              STATUS.md (read first), ASSUMPTIONS, BENCH_PROTOCOL, REQUIREMENTS, MEFF_window_findings
+docs/results/      printed outputs of the evaluations
+docs/figures/      the heat-only result plots and ANSYS summaries
+hardware/          wiring diagram, pin table, drive circuit (design only, nothing built)
 ```
 
 | Part | What it is |

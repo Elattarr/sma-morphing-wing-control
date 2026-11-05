@@ -57,3 +57,7 @@ Checked: types K J N E T R S B, 19-bit, ±0.15 % full scale, cold junction ±0.7
 
 ## Still open
 Second safety processor, return mechanism, real shunt and relay part numbers, SPICE run of the power stage.
+
+## Datasheet check 2026-11-05
+Checked: PA0 ADC1_IN1, SPI2 PB12-15, LPUART1 PA2/PA3, INA240 VS 2.7-5.5 V and output swing, MAX31856 registers.
+Unchecked: INA240 / MAX31856 pin numbers, HRTIM pins, PA1, Vbus divider pin, SPI mode, relay, fuse, shunt, laser (range >= 10 mm needed).

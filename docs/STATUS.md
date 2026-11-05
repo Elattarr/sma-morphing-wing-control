@@ -108,3 +108,12 @@ Still open / not validated:
 - The TE map is from one load case; the one-point zero (wire extended at start) is an assumption.
 
 - Known residual (hardware review): a position sensor that freezes MID-STROKE (8 s in the nominal run) makes the controller drive blind at 35 A for about 2 s; the wire finishes the stroke at 65 °C (54 °C normal, 258 J instead of 223 J) and the controller then stops itself. No monitor check can act within 2 s without false trips; the bound is the controller's own limit, below the 75 °C cap.
+
+## Update 2026-11-05
+- Heat-only stroke: tol_bound = 0 at the bounds, stall learning (5 %) in the monitor; 18 K wing window reaches 98.6 % at 68.8 C peak (allowed 73 C); python and C ported, replay tests pass.
+- Wire voltage is now estimated, not measured: V_wire = mean(D*Vbus) - I*R_other (Vbus divider ADC channel needed).  Error about 9 % in R at 35 A.
+- New board layer c/board (20 kHz current loop, slow loop, relay state machine, PC-simulated power stage, `make board_sim`); tests/test_board.py.  Simulation only.
+- Safety processor proposal: docs/SAFETY_PROCESSOR.md.  Bench validation: scripts/validate_bench.py + docs/BENCH_VALIDATION_PLAN.md (tested on synthetic data only).
+- Datasheet check: confirmed PA0 ADC1_IN1, SPI2 PB12-15, LPUART1 PA2/PA3, INA240 supply and output swing, MAX31856 registers.  Still unchecked: INA240/MAX31856 pin numbers, HRTIM pins, PA1, Vbus pin, SPI mode, relay, fuse, shunt, laser.  Laser range must be >= 10 mm.
+- Thesis As fix: copies *_AsFix.pptx / *_AsFix.docx (As = 50.8 C); figures still show 35 C.
+- NOT validated on hardware.  Pending: PR merge.

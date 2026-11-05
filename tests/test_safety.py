@@ -93,8 +93,12 @@ def test_stall_needs_no_motion_above_af_and_resets_on_motion():
     kw = dict(I_cmd=2.0, I_meas=2.0, T1=ramp(100.0, 8.0), T2=ramp(100.0, 8.0))   # 2 A heats at about 15 K/s
     m = mon()
     m.set_calibration(stroke_mm=6.0, Af_max=94.0)
-    run(m, 600, d=lambda t: 0.05 * t, **kw)             # moving 0.05 mm/s = 1 mm per 20 s: more than 15 % of 6 mm per 8 s? no, 0.4 mm
+    run(m, 600, d=lambda t: 0.002 * t, **kw)            # 0.002 mm/s: below 5 % of the stroke in 8 s and not enough to learn from: a jam
     assert m.reason == "stall"
+    m = mon()
+    m.set_calibration(stroke_mm=6.0, Af_max=94.0)
+    run(m, 600, d=lambda t: 0.05 * t, **kw)             # 0.05 mm/s: slowly moving above A_f,max = the real window is higher than the model, not a stall
+    assert m.reason != "stall" and m.Af_max > 94.0
     m = mon()
     m.set_calibration(stroke_mm=6.0, Af_max=94.0)
     run(m, 600, d=lambda t: 0.3 * t, **kw)              # 2.4 mm per 8 s: real motion keeps resetting the timer

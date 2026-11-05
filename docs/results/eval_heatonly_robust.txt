@@ -11,8 +11,9 @@ rho -20 %                                        4 of 4           0.18   0.06   
 preload ctl 2 -> 30 MPa                          4 of 4           0.34   0.12   54.3        63     265
 preload true 30 MPa                              4 of 4           0.21   0.08   58.2        71     295
 spread 2 K                                       4 of 4           0.62   0.22   58.0        63     277
-spread 5 K                                       3 of 4           0.51   0.18   63.2      1500     293
-spread 2 K + 25 % tail to 20 K (severe, NOT the data)     3 of 4           0.23   0.08   70.1      1500     330
+spread 5 K                                       4 of 4           1.13   0.40   63.8        64     298
+spread 2 K + 25 % tail to 20 K (severe, NOT the data)     3 of 4           0.23   0.08   70.3      1500     334
+wing window 18 K (A_s 51, A_f 69), no wing model     4 of 4           0.89   0.32   68.8        69     335
 ANSYS Up 40 fit (0.4 K, 5 % tail to 5 K)         4 of 4           0.70   0.25   56.5        65     274
 ambient 15 C                                     4 of 4           0.28   0.10   54.1        69     309
 ambient 32 C                                     4 of 4           0.28   0.10   54.3        63     212

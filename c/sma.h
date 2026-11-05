@@ -53,7 +53,7 @@ typedef struct {
     /* heat-only (one-way actuator) mode, see cycle_controller.py: cfg_heat_only */
     int heat_only, creep_confirm;
     sma_real creep_rate, creep_detect, q_tau, approach_gain, approach_span, approach_min_rate, fast_detect, creep_pcap, settle_dr, settle_s,
-             full_min, near_tol, drop_tol, reset_r, reset_still_s, reset_timeout;
+             full_min, near_tol, drop_tol, reset_r, reset_still_s, reset_timeout, tol_bound;
 } sma_cfg_t;
 
 /* ------------------------------------------------------------------ bias-spring stress model */
@@ -143,7 +143,7 @@ typedef enum { SMA_S_OK = 0, SMA_S_SENSOR_RANGE, SMA_S_OVER_TEMPERATURE, SMA_S_T
 
 typedef struct {
     sma_real T_trip, T_disagree, T_disagree_dyn, h_min, h_max, dT_amb, band, T_lat_lo, stall_dT, t_stall, stall_frac, I_tol_abs, I_tol_rel,
-             t_I_mismatch, R_tol, mc_min_frac, mc_max_frac, lat_max_frac, tc_lag_max, T_range_lo, T_range_hi, t_tc_freeze, t_d_freeze;
+             t_I_mismatch, R_tol, mc_min_frac, mc_max_frac, lat_max_frac, tc_lag_max, T_range_lo, T_range_hi, t_tc_freeze, t_d_freeze, stall_learn_frac;
     int n_freeze;
 } sma_safety_cfg_t;
 
@@ -157,7 +157,7 @@ typedef struct {
     int tripped, armed;
     sma_trip_t reason;
     sma_real t, T_lo, T_lo_f, T_hi, Tamb0;
-    sma_real I_prev, t_Imis, t_hot, d_hot0;
+    sma_real I_prev, t_Imis, t_hot, d_hot0, d_lrn;
     int d_hot_valid, T_prev_valid, beat_valid, n_same;
     sma_real T1_prev, T2_prev, T1_frz, t_frz, d_prev, t_dfrz;
     int T1_frz_valid, d_prev_valid;

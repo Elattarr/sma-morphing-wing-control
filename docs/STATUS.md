@@ -44,7 +44,7 @@ python scripts/export_replay.py out/ && make -C c && c/replay out/nominal.txt
 
 ## Embedded-wire plant (first run, 2026-10-30)
 
-Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at the wire (derived from the thesis ANSYS Up 40 mm run, force 7 N -> 48 N for 3.27 % recovery; assumes the spring acts in parallel with the structure at the wire end), preload 250 MPa (785 N), current limit 35 A, ambient convection h = 30 W/m2K (the real heat loss into the CFRP is unknown). Results: `docs/results/eval_wing_*.txt`, figures `docs/figures/wing/`.
+Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at the wire (derived from the thesis ANSYS Up 40 mm run, force 7 N -> 48 N for 3.27 % recovery; assumes the spring acts in parallel with the structure at the wire end), preload 250 MPa (785 N), current limit 35 A, ambient convection h = 30 W/m2K (the real heat loss into the CFRP is unknown). Results: `docs/results/eval_wing_*.txt`, figures `docs/figures/`.
 
 - Windows with the spring: A_s 87.3, A_f 91.8, T_fs 32.2, T_fe 27.7 C (thesis ANSYS without spring: about 51-55 C).
 - Contraction 7 s to full stroke at 35 A, peak 92 C, 350 J; extension 90-380 s (cooling limited).
@@ -57,7 +57,7 @@ Plant: 2 mm wire, 200 mm, bias spring 5 N/mm + wing structure about 6.4 N/mm at 
 Plant: 2 mm × 200 mm NiTi, structure only (6.4 N/mm at the wire, 7 N = 2.2 MPa preload), no bias spring, 35 A limit, no homing
 (homing would use the one-way stroke). TE map: from the ANSYS Up 40 run (see 'ANSYS comparison' below), not linear. Code: `cfg_heat_only` in
 `cycle_controller.py` (no 'down' mode, hold = power off, pre-heat to A_s − 3 K, 1 K/s temperature creep until motion is seen, then
-position loop Kr 8/s, reference rate 0.1/s); harness `scripts/evaluate_heatonly.py`; results `docs/results/eval_heatonly_*.txt`, `docs/figures/wing/heatonly_*.png`.
+position loop Kr 8/s, reference rate 0.1/s); harness `scripts/evaluate_heatonly.py`; results `docs/results/eval_heatonly_*.txt`, `docs/figures/heatonly_*.png`.
 All of it is model vs model (verification), nothing validated.
 
 What the runs show (default preset, regenerated 2026-10-30 after the last fixes; older numbers such as "14 of 17" are superseded):
@@ -108,3 +108,12 @@ Still open / not validated:
 - The TE map is from one load case; the one-point zero (wire extended at start) is an assumption.
 
 - Known residual (hardware review): a position sensor that freezes MID-STROKE (8 s in the nominal run) makes the controller drive blind at 35 A for about 2 s; the wire finishes the stroke at 65 °C (54 °C normal, 258 J instead of 223 J) and the controller then stops itself. No monitor check can act within 2 s without false trips; the bound is the controller's own limit, below the 75 °C cap.
+
+## Update 2026-11-05
+- Heat-only stroke: tol_bound = 0 at the bounds, stall learning (5 %) in the monitor; 18 K wing window reaches 98.6 % at 68.8 C peak (allowed 73 C); python and C ported, replay tests pass.
+- Wire voltage is now estimated, not measured: V_wire = mean(D*Vbus) - I*R_other (Vbus divider ADC channel needed).  Error about 9 % in R at 35 A.
+- New board layer c/board (20 kHz current loop, slow loop, relay state machine, PC-simulated power stage, `make board_sim`); tests/test_board.py.  Simulation only.
+- Safety processor proposal: docs/SAFETY_PROCESSOR.md.  Bench validation: scripts/validate_bench.py + docs/BENCH_VALIDATION_PLAN.md (tested on synthetic data only).
+- Datasheet check: confirmed PA0 ADC1_IN1, SPI2 PB12-15, LPUART1 PA2/PA3, INA240 supply and output swing, MAX31856 registers.  Still unchecked: INA240/MAX31856 pin numbers, HRTIM pins, PA1, Vbus pin, SPI mode, relay, fuse, shunt, laser.  Laser range must be >= 10 mm.
+- Thesis As fix: copies *_AsFix.pptx / *_AsFix.docx (As = 50.8 C); figures still show 35 C.
+- NOT validated on hardware.  Pending: PR merge.

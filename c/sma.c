@@ -265,7 +265,7 @@ sma_real sma_ctl_step(sma_ctl_t *ct, sma_real r_target, sma_real T_meas, sma_rea
         else if (r_target < ct->r_f - c->db_start && !c->heat_only) ctl_enter(ct, SMA_DOWN);
     }
     sma_real P = 0;
-    sma_real tol = (r_target > (sma_real)0.03 && r_target < (sma_real)0.97) ? c->db_done : (sma_real)0.03;
+    sma_real tol = (r_target > (sma_real)0.03 && r_target < (sma_real)0.97) ? c->db_done : (c->tol_bound > c->db_done ? c->tol_bound : c->db_done);
     if (ct->mode == SMA_UP) {
         int moved, pre;
         if (c->heat_only && !ct->in_loop) {
@@ -599,7 +599,10 @@ sma_real sma_safety_step(sma_safety_t *s, sma_real I_cmd, sma_real I_meas, sma_r
 
     if (s->stroke_valid && have_d) {
         if (T1 > s->Af_max + c->stall_dT) {
-            if (!s->d_hot_valid) { s->d_hot0 = d; s->t_hot = 0; s->d_hot_valid = 1; }
+            if (!s->d_hot_valid) { s->d_hot0 = d; s->t_hot = 0; s->d_hot_valid = 1; s->d_lrn = d; }
+            if (FABS(d - s->d_lrn) > c->stall_learn_frac * s->stroke_mm) {
+                s->Af_max = T1 > s->Af_max ? T1 : s->Af_max; s->d_lrn = d; s->d_hot0 = d; s->t_hot = 0;
+            }
             if (I_meas > (sma_real)0.3) s->t_hot += dt;
             if (FABS(d - s->d_hot0) > c->stall_frac * s->stroke_mm) { s->d_hot0 = d; s->t_hot = 0; }
             if (s->t_hot > c->t_stall) safety_trip(s, SMA_S_STALL);

@@ -81,6 +81,22 @@ def sec_disturb(fig=None):
             print(f"{name:28s} {tgt:6.1f} {tt:14.1f} {100 * (L[L[:, 0] > 100, 2].mean() - tgt):+11.2f} {L[:, 1].max():6.1f} {L[-1, 6]:6.0f}")
 
 
+def wing_window(W=18.0, Af_target=69.0):
+    """plant whose recovery window under the structure runs from Af_target - W to Af_target (supervisor: A_s,sigma about 51, A_f,sigma about 69 C in the wing).
+    h sets the width, R shifts the position; both found by iteration on the controller's own window formula."""
+    m = ev.NOM.meff
+    h, R = m.h, m.R
+    for _ in range(3):
+        p = replace(ev.NOM, meff=replace(m, h=h, R=R))
+        c = CycleController(p, 2.2, ev.make_cfg(), K_spring=BiasSpring(2.2, 6.36).K(p))
+        h += (W - c.W) * m.beta / m.eps_L
+    for _ in range(3):
+        p = replace(ev.NOM, meff=replace(m, h=h, R=R))
+        c = CycleController(p, 2.2, ev.make_cfg(), K_spring=BiasSpring(2.2, 6.36).K(p))
+        R += (Af_target - c.Af) * m.beta
+    return replace(ev.NOM, meff=replace(m, h=h, R=R))
+
+
 def cases():
     lam = 0.0727
     m = ev.NOM.meff
@@ -91,7 +107,8 @@ def cases():
             ("preload ctl 2 -> 30 MPa", dict(sigma_ctl=30.0)), ("preload true 30 MPa", dict(sigma_true=30.0, sigma_ctl=2.2)),
             ("spread 2 K", dict(struct=dict(spread_K=2.0))), ("spread 5 K", dict(struct=dict(spread_K=5.0))),
             ("spread 2 K + 25 % tail to 20 K (severe, NOT the data)", dict(struct=dict(spread_K=2.0, tail_frac=0.25, tail_K=20.0))),
-            ("ANSYS Up 40 fit (0.4 K, 5 % tail to 5 K)", dict(struct=dict(spread_K=0.4, tail_frac=0.05, tail_K=5.0))),
+            ("wing window 18 K (A_s 51, A_f 69), no wing model", dict(p_true=wing_window())),
+                        ("ANSYS Up 40 fit (0.4 K, 5 % tail to 5 K)", dict(struct=dict(spread_K=0.4, tail_frac=0.05, tail_K=5.0))),
             ("ambient 15 C", dict(T_amb=15.0)), ("ambient 32 C", dict(T_amb=32.0))]
 
 

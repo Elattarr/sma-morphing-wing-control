@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     for (i = 0; i < 8; i++) rd(f, &v[i]);
     M.T0 = v[0]; M.R = v[1]; M.beta = v[2]; M.eps_L = v[3]; M.h = v[4]; M.m = v[5]; M.E_A = v[6]; M.E_M = v[7];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* cfg */
-    for (i = 0; i < 48; i++) rd(f, &v[i]);
+    for (i = 0; i < 49; i++) rd(f, &v[i]);
     cfg.Ts = v[0]; cfg.Kp = v[1]; cfg.Ki = v[2]; cfg.k_soft = v[3]; cfg.dTdt_max = v[4]; cfg.margin_up = v[5]; cfg.margin_dn = v[6];
     cfg.T_safe_above_fs = v[7]; cfg.Kr = v[8]; cfg.Ki_r = v[9]; cfg.Kr_dn = v[10]; cfg.Ki_r_dn = v[11]; cfg.tau_filt = v[12]; cfg.Kp_hold = v[13];
     cfg.Ki_hold = v[14]; cfg.drdt_up = v[15]; cfg.dn_frac = v[16]; cfg.Kaw = v[17]; cfg.db_start = v[18]; cfg.db_done = v[19]; cfg.T_amb_est = v[20];
@@ -47,15 +47,15 @@ int main(int argc, char **argv)
     cfg.heat_only = (int)v[30]; cfg.creep_confirm = (int)v[31]; cfg.creep_rate = v[32]; cfg.creep_detect = v[33]; cfg.q_tau = v[34];
     cfg.approach_gain = v[35]; cfg.approach_span = v[36]; cfg.approach_min_rate = v[37]; cfg.fast_detect = v[38]; cfg.creep_pcap = v[39];
     cfg.settle_dr = v[40]; cfg.settle_s = v[41]; cfg.full_min = v[42]; cfg.near_tol = v[43]; cfg.drop_tol = v[44]; cfg.reset_r = v[45];
-    cfg.reset_still_s = v[46]; cfg.reset_timeout = v[47];
+    cfg.reset_still_s = v[46]; cfg.reset_timeout = v[47]; cfg.tol_bound = v[48];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* ctl */
     rd(f, &v[0]); rd(f, &v[1]); sigma = v[0]; K = v[1];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* safety */
-    for (i = 0; i < 24; i++) rd(f, &v[i]);
+    for (i = 0; i < 25; i++) rd(f, &v[i]);
     sc.T_trip = v[0]; sc.T_disagree = v[1]; sc.T_disagree_dyn = v[2]; sc.h_min = v[3]; sc.h_max = v[4]; sc.dT_amb = v[5]; sc.band = v[6];
     sc.T_lat_lo = v[7]; sc.stall_dT = v[8]; sc.t_stall = v[9]; sc.stall_frac = v[10]; sc.I_tol_abs = v[11]; sc.I_tol_rel = v[12];
     sc.t_I_mismatch = v[13]; sc.R_tol = v[14]; sc.mc_min_frac = v[15]; sc.mc_max_frac = v[16]; sc.lat_max_frac = v[17]; sc.tc_lag_max = v[18];
-    sc.T_range_lo = v[19]; sc.T_range_hi = v[20]; sc.n_freeze = (int)v[21]; sc.t_tc_freeze = v[22]; sc.t_d_freeze = v[23];
+    sc.T_range_lo = v[19]; sc.T_range_hi = v[20]; sc.n_freeze = (int)v[21]; sc.t_tc_freeze = v[22]; sc.t_d_freeze = v[23]; sc.stall_learn_frac = v[24];
     if (fscanf(f, "%31s", key) != 1) return 2;          /* arm */
     rd(f, &v[0]); rd(f, &v[1]); rd(f, &v[2]);
     arm_T1 = v[0]; arm_have_T2 = (int)v[1]; arm_T2 = v[2];

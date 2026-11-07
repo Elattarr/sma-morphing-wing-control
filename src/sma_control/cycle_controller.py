@@ -75,6 +75,7 @@ class CycleCfg:
     fast_detect: float = 3.0     # raw r above r_entry + fast_detect * creep_detect counts as motion at once (no confirmation delay for clear motion)
     creep_pcap: float = 1e9      # creep power cap  P <= Q + creep_pcap * m c * creep_rate: bounds how fast the wire can move before motion is recognised
     settle_dr: float = 0.004     # heat-only: motion smaller than this (fast-filtered r) ...
+    tol_bound: float = 0.03      # accept this position error at r = 0 / 1 (a wrong sigma biases r_est there); heat-only presets set it to db_done so the wire keeps heating until it stops
     settle_s: float = 4.0        # s    ... for this long while heating means the wire has stopped (end of travel, tail, or jam)
     full_min: float = 0.85       #      a stop at r >= this when the full stroke was requested is accepted as the end of travel (first-stroke learner)
     near_tol: float = 0.05       #      a stop within this of an intermediate target is accepted
@@ -254,7 +255,7 @@ def cfg_heat_only(p: SMAParams, **overrides) -> CycleCfg:
     """preset for a one-way actuator (heating only, no return stroke): no 'down' mode, hold = power off, pre-heat stops 3 K below A_s and a
     1 K/s temperature creep finds the real start of the window, then a slow (0.1/s) and stiff (Kr 8/s) position loop. Found in simulation
     on the 2 mm thesis wire; NOT validated, re-tune on the bench (an overshoot cannot be undone in a one-way system)."""
-    d = dict(heat_only=True, margin_up=3.0, creep_rate=1.0, creep_detect=0.01, Kr=8.0, drdt_up=0.1, T_abs_max=75.0)
+    d = dict(heat_only=True, tol_bound=0.0, margin_up=3.0, creep_rate=1.0, creep_detect=0.01, Kr=8.0, drdt_up=0.1, T_abs_max=75.0)
     d.update(overrides)
     return cfg_for_wire(p, **d)
 
@@ -446,7 +447,7 @@ class CycleController:
         P = 0.0
         # at a bound (r = 0 or 1) the estimate cannot cross it: a wrong sigma biases r_est by 0.07 % strain per 25 MPa,
         # so accept 0.03 there; inside the range use the tight tolerance
-        tol = c.db_done if 0.03 < r_target < 0.97 else 0.03
+        tol = c.db_done if 0.03 < r_target < 0.97 else max(c.tol_bound, c.db_done)
         if self.mode == "up":
             if c.heat_only and not self.in_loop:
                 self.n_detect = self.n_detect + 1 if self.r_q > self.r_entry + c.creep_detect else 0

@@ -20,7 +20,7 @@
 
 Unresolved: ANSYS forward-transformation stress rise (2.6 vs 7.1 MPa predicted) - not used by this plant.
 
-## Robustness sweep (scripts/param_sweep.py; controller = nominal model, plant = perturbed)
+## Robustness sweep (controller = nominal model, plant = perturbed; run with evaluate_heatonly.py robust)
 
 Result file: the table printed by the script. Summary of what it showed:
 

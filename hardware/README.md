@@ -7,6 +7,6 @@
 | `wiring_diagram.png` / `.svg` | Schematic-style wiring with real part numbers |
 | `real_components.png` | The same connections drawn as physical parts |
 | `pin_table.md` | Pin-by-pin table; says which values were read in datasheets and which are placeholders |
-| `drive_circuit_animation.html` | Open in a browser: animated circuit with fault injection (model data) |
+| `drive_circuit_animation.html` | **Open in a browser.** Self-contained animated circuit: duty, current, MOSFET and freewheel paths, shunt, relay, fault injection, real part ratings (model data, not a SPICE run) |
 
-Checked in datasheets: UCC27211 (pins, TTL thresholds, 8–17 V supply), BSC014N04LS, INA240A2 gain and range, MAX31856 type. Not checked: fuse, relay, shunt, laser, STM32 pin numbers. Open: wire-voltage input for the resistance check, second safety processor, return mechanism, board layer and fast current loop.
+Checked in datasheets: UCC27211 (pins, TTL thresholds, 8–17 V supply), BSC014N04LS, INA240A2 gain and range, MAX31856 type. Not checked: fuse, relay, shunt, laser (range >= 10 mm needed), STM32 HRTIM/PA1/Vbus pins, INA240 and MAX31856 pin numbers. Wire voltage is estimated from duty, bus voltage (divider needed) and current. Open: hardware overcurrent latch and second safety processor (`docs/SAFETY_PROCESSOR.md`), return mechanism, SPICE run, STM32 HAL port.

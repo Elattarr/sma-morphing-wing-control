@@ -60,4 +60,4 @@ def main(out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs/figures/wing/heatonly_ansys_comparison.png"))
+    main(sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs/figures/heatonly_ansys_comparison.png"))

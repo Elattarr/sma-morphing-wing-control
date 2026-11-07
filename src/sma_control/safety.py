@@ -51,6 +51,7 @@ class SafetyCfg:
     t_I_mismatch: float = 1.0        # s
     R_tol: float = 0.45              # relative tolerance on the wire resistance
     t_tc_freeze: float = 10.0        # s   unchanged T1 reading while the wire is heated or hot
+    stall_learn_frac: float = 0.05   # of the stroke: a hot, heated wire that moves more than this raises A_f,max to its temperature (real window wider/higher than the model); a jammed wire never moves
     t_d_freeze: float = 5.0          # s   unchanged position reading while the wire is heated; [ASSUMED] the sensor noise exceeds its resolution (0 disables)
     n_freeze: int = 10               # samples with an unchanged heartbeat
     mc_min_frac: float = 0.3         # [ASSUMED] smallest credible m*c as a fraction of the nominal value (c as low as 250 J/kg/K): upper bound
@@ -75,7 +76,7 @@ class SafetyMonitor:
         self.armed = False
         self.T_lo = self.T_lo_f = self.T_hi = self.Tamb0 = None
         self.To = None
-        self._I_prev, self._t_Imis, self._t_hot, self._d_hot0 = 0.0, 0.0, 0.0, None
+        self._I_prev, self._t_Imis, self._t_hot, self._d_hot0, self._d_lrn = 0.0, 0.0, 0.0, None, None
         self._beat, self._n_same, self._T1_prev, self._T2_prev = None, 0, None, None
         self._T1_frz, self._t_frz = None, 0.0
         self._d_prev, self._t_dfrz = None, 0.0
@@ -162,7 +163,9 @@ class SafetyMonitor:
         if self.stroke_mm is not None and d is not None:
             if T1 > self.Af_max + c.stall_dT:
                 if self._d_hot0 is None:
-                    self._d_hot0, self._t_hot = d, 0.0
+                    self._d_hot0, self._t_hot, self._d_lrn = d, 0.0, d
+                if abs(d - self._d_lrn) > c.stall_learn_frac * self.stroke_mm:      # it moves while hot: the real A_f is at least this high
+                    self.Af_max, self._d_lrn, self._d_hot0, self._t_hot = max(self.Af_max, T1), d, d, 0.0
                 if I_meas > 0.3:                                    # only a HEATED wire that does not move is a stall (a hot wire cooling at rest is not)
                     self._t_hot += dt
                 if abs(d - self._d_hot0) > c.stall_frac * self.stroke_mm:

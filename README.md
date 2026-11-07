@@ -4,31 +4,29 @@ Controller and plant simulation for NiTi shape-memory-alloy (SMA) wire actuation
 
 **Status: simulation-verified only. Nothing is validated on a real wire or wing.** Everything in `docs/results/eval_*.txt` is model against model, or model against ANSYS (itself a simulation). Read `docs/STATUS.md` for what is done, what failed and the limits before you trust any number.
 
+## Start here
+
+| If you want to... | Open |
+|---|---|
+| know what is done, what failed, what is unproven | `docs/STATUS.md` |
+| see the drive circuit working (animated, with fault injection) | `hardware/drive_circuit_animation.html` (open in a browser) |
+| understand the safety design | `docs/SAFETY_PROCESSOR.md`, `src/sma_control/safety.py` |
+| validate the model on a real 0.5 mm wire | `docs/BENCH_PROTOCOL.md`, `docs/BENCH_VALIDATION_PLAN.md`, `scripts/validate_bench.py` |
+
 ## Repository layout
 
 ```
-src/sma_control/   library: plant, controller, safety monitor, TE map, hardware interface
-c/                 portable C99 port (controller, homing, safety monitor) + replay test
-tests/             114 tests (Python, plus Python-vs-C replay)
-scripts/           evaluations, figure scripts, MEFF and thermal studies
-data/              ANSYS exports and constants used for fitting
-docs/
-  STATUS.md        read first: done, not done, known limits
-  ASSUMPTIONS.md   every assumed number
-  BENCH_PROTOCOL.md commissioning gates for the first hardware test
-  results/         eval_*.txt and other script outputs
-  figures/         plots (ansys, const, spring, thin, wing, and the numbered figures)
-  notes/           PLAN, requirements, MEFF window findings
-hardware/          wiring diagram, pin table, drive circuit (design only)
-archive/           first demo version and old figures, kept for history
+src/sma_control/   Python: wire model, controller, safety monitor, trailing-edge map, hardware interface
+c/                 C99 port of controller + monitor (replay-tested against Python)
+c/board/           board layer: 20 kHz current loop, slow loop, relay logic, simulated power stage (PC only)
+tests/             pytest suite (about 150 tests, about 2 minutes)
+scripts/           evaluations, C replay export, board chain run, bench identification and validation
+data/              ANSYS exports used for fitting, bench log template
+docs/              STATUS (read first), ASSUMPTIONS, REQUIREMENTS, bench docs, safety processor, MEFF findings
+docs/results/      printed outputs of the evaluations
+docs/figures/      result plots
+hardware/          circuit animation, wiring diagrams, pin table (design only, nothing built)
 ```
-
-| Part | What it is |
-|---|---|
-| `src/sma_control/cycle_controller.py` | Two controllers in one class: the bias-spring cycle controller with homing, and the **heat-only (one-way) controller** for the embedded wire (`cfg_heat_only`): temperature creep into the transformation window, then a slow position loop; no spring, no return; first-stroke learner; fault states |
-| `src/sma_control/safety.py` | Independent monitor between controller and power stage, 10 checks: over-temperature, thermocouple disagreement, energy-balance envelope, stall, current mismatch, resistance, watchdog, sensor range, frozen thermocouple, frozen position sensor |
-| `src/sma_control/te_map.py` | Wire recovery r to trailing-edge deflection in mm, from the ANSYS Up 40 mm run (concave, not linear) |
-| `src/sma_control/hardware_io.py` | `RigIO` interface and one control-loop step; you implement ADC / PWM / relay in a subclass (untested on hardware) |
 
 ## Install and test
 
@@ -74,6 +72,7 @@ ctl = CycleController(P, 2.2, cfg_heat_only(P, Ts=0.05), K_spring=BiasSpring(2.2
 
 ## Results in short (simulation)
 
+- Heat-only on the 18 K wing window: 98.6 % of the stroke at 68.8 °C peak (not 100 %).
 - Full stroke: settles in 14.5 s, overshoot below 1 %, steady-state error below 0.4 %, wire peak 54–57 °C, about 220 J.
 - 16 of 18 parameter-error cases reach all four targets (0.25 / 0.5 / 0.75 / 1.0 of the stroke), including a plant fitted to the ANSYS recovery curve.
 - Needs displacement noise of about 0.03 mm or better on the wire stroke; fails at 0.1 mm.

@@ -11,6 +11,7 @@ Controller and plant simulation for NiTi shape-memory-alloy (SMA) wire actuation
 | know what is done, what failed, what is unproven | `docs/STATUS.md` |
 | see the drive circuit working (animated, with fault injection) | `hardware/drive_circuit_animation.html` (open in a browser) |
 | understand the safety design | `docs/SAFETY_PROCESSOR.md`, `src/sma_control/safety.py` |
+| see the controller results animated and charted | `docs/heatonly_animation.html` (browser), `docs/figures/heatonly_robust_bars.png`, `docs/figures/heatonly_windows.png` |
 | validate the model on a real 0.5 mm wire | `docs/BENCH_PROTOCOL.md`, `docs/BENCH_VALIDATION_PLAN.md`, `scripts/validate_bench.py` |
 
 ## Repository layout
@@ -72,6 +73,7 @@ ctl = CycleController(P, 2.2, cfg_heat_only(P, Ts=0.05), K_spring=BiasSpring(2.2
 
 ## Results in short (simulation)
 
+- Wide windows (18 K, 30 K, 25 K with A_f 73 °C) reach 4 of 4 targets in simulation, but the current chatters (0 to about 30 A) in the last strokes: not tuned yet.
 - Heat-only on the 18 K wing window: 98.6 % of the stroke at 68.8 °C peak (not 100 %).
 - Full stroke: settles in 14.5 s, overshoot below 1 %, steady-state error below 0.4 %, wire peak 54–57 °C, about 220 J.
 - 16 of 18 parameter-error cases reach all four targets (0.25 / 0.5 / 0.75 / 1.0 of the stroke), including a plant fitted to the ANSYS recovery curve.

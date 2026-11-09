@@ -120,3 +120,9 @@ Still open / not validated:
 
 ## What the results do and do not show
 Agreement with ANSYS is not independent evidence: ANSYS runs the same constitutive law (MEFF). Independent checks so far: the standalone wire and the baseline CFD against literature. Controller results (eval_*.txt) are model against model. The 18 / 25 / 30 K window cases are built from a supervisor estimate marked "derived: verify" in MEFF_window_findings.md; they show the controller copes with a wide window in simulation, not that the wing has one.
+
+## Update 2026-11-09
+- Mandatory thermal fuse, Gate 7 (35 A commissioning) in BENCH_PROTOCOL, R and laser corrections in pin_table.
+- Wider-window cases added (30 K, 25 K at 73 C): 4 of 4 in simulation. Charts and animation: scripts/make_robust_figs.py -> docs/heatonly_animation.html, docs/figures/heatonly_*.png.
+- OPEN: current chatter (0 to about 30 A) in the last two strokes on wide windows; tune the position loop or add an output slew limit before power-up. Not fixed.
+- OPEN: hardware overcurrent latch, independent over-temperature cutout, resin Tg, 0.5 mm bench run (nothing validated on hardware).

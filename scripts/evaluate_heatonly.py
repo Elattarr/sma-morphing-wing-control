@@ -108,6 +108,8 @@ def cases():
             ("spread 2 K", dict(struct=dict(spread_K=2.0))), ("spread 5 K", dict(struct=dict(spread_K=5.0))),
             ("spread 2 K + 25 % tail to 20 K (severe, NOT the data)", dict(struct=dict(spread_K=2.0, tail_frac=0.25, tail_K=20.0))),
             ("wing window 18 K (A_s 51, A_f 69), no wing model", dict(p_true=wing_window())),
+            ("wing window 30 K (A_s 39, A_f 69)", dict(p_true=wing_window(W=30.0))),
+            ("wing window 25 K, A_f 73 (peak limit)", dict(p_true=wing_window(W=25.0, Af_target=73.0))),
                         ("ANSYS Up 40 fit (0.4 K, 5 % tail to 5 K)", dict(struct=dict(spread_K=0.4, tail_frac=0.05, tail_K=5.0))),
             ("ambient 15 C", dict(T_amb=15.0)), ("ambient 32 C", dict(T_amb=32.0))]
 

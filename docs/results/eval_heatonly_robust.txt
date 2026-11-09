@@ -14,6 +14,8 @@ spread 2 K                                       4 of 4           0.62   0.22   
 spread 5 K                                       4 of 4           1.13   0.40   63.8        64     298
 spread 2 K + 25 % tail to 20 K (severe, NOT the data)     3 of 4           0.23   0.08   70.3      1500     334
 wing window 18 K (A_s 51, A_f 69), no wing model     4 of 4           0.89   0.32   68.8        69     335
+wing window 30 K (A_s 39, A_f 69)                4 of 4           0.89   0.32   68.7        66     321
+wing window 25 K, A_f 73 (peak limit)            4 of 4           1.41   0.50   72.8        69     350
 ANSYS Up 40 fit (0.4 K, 5 % tail to 5 K)         4 of 4           0.70   0.25   56.5        65     274
 ambient 15 C                                     4 of 4           0.28   0.10   54.1        69     309
 ambient 32 C                                     4 of 4           0.28   0.10   54.3        63     212

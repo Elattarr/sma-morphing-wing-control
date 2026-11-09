@@ -117,3 +117,6 @@ Still open / not validated:
 - Datasheet check: confirmed PA0 ADC1_IN1, SPI2 PB12-15, LPUART1 PA2/PA3, INA240 supply and output swing, MAX31856 registers.  Still unchecked: INA240/MAX31856 pin numbers, HRTIM pins, PA1, Vbus pin, SPI mode, relay, fuse, shunt, laser.  Laser range must be >= 10 mm.
 - Thesis As fix: copies *_AsFix.pptx / *_AsFix.docx (As = 50.8 C); figures still show 35 C.
 - NOT validated on hardware.  Pending: PR merge.
+
+## What the results do and do not show
+Agreement with ANSYS is not independent evidence: ANSYS runs the same constitutive law (MEFF). Independent checks so far: the standalone wire and the baseline CFD against literature. Controller results (eval_*.txt) are model against model. The 18 / 25 / 30 K window cases are built from a supervisor estimate marked "derived: verify" in MEFF_window_findings.md; they show the controller copes with a wide window in simulation, not that the wing has one.

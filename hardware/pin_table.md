@@ -8,7 +8,7 @@
 | Supply + (5 V, 40 A) | F1 fuse 40 A | fast blade, cable ≥10 mm² (35 A) | not checked |
 | F1 | K1 contact | contact ≥40 A DC | not checked |
 | K1 | +V rail: C1, Q2 drain, L1 | C1 2×1000 µF polymer + ceramics at the FETs | not checked |
-| L1 (~10 µH, ≥60 A sat) | NiTi wire | wire ≈0.1 Ω, clamps = main loss of contact R | not checked |
+| L1 (~10 µH, ≥60 A sat) | NiTi wire | wire: model 0.051-0.064 Ω; contact R unmeasured (the earlier "≈0.1 Ω" was a guess) | not checked |
 | Wire | SW node | | |
 | SW node | Q1 drain and Q2 source | Q2 = freewheel, drain on +V | |
 | Q1 source | R1 shunt 1 mΩ → GND star | 4-terminal, ≥5 W | not checked |
@@ -61,3 +61,5 @@ Second safety processor, return mechanism, real shunt and relay part numbers, SP
 ## Datasheet check 2026-11-05
 Checked: PA0 ADC1_IN1, SPI2 PB12-15, LPUART1 PA2/PA3, INA240 VS 2.7-5.5 V and output swing, MAX31856 registers.
 Unchecked: INA240 / MAX31856 pin numbers, HRTIM pins, PA1, Vbus divider pin, SPI mode, relay, fuse, shunt, laser (range >= 10 mm needed).
+
+Laser: range 10-20 mm required (stroke 6.6 mm); 12-bit ADC over 4-20 mA gives about 0.005 mm per count at 15 mm, a 100 mm range gives 0.034 mm and fails the noise requirement.

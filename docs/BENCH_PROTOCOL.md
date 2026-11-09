@@ -19,7 +19,7 @@ Reference configuration (what the evaluation assumed): 0.5 mm wire, 200 mm free 
 | Position sensor | noise ≤ 0.02 mm rms (0.1 mm tolerated), ≥ 20 Hz, range ≥ 10 mm (stroke = 3.3 % of 200 mm ≈ 6.6 mm) | evaluated up to 0.1 mm noise and 0.05 mm quantisation |
 | Safety relay | normally-open, in series with the wire, driven by the safety processor only | trip = relay open = power off; wire then extends under the spring (safe end) |
 | Safety processor | separate MCU or comparator logic, own supply, receives I_cmd, I_meas, T1, T2, d, V and a controller heartbeat | `safety.py` runs on it; controller failure must not disable it |
-| Thermal fuse (recommended) | cut-out near the wire clamp, ≈ 130 °C | last line of defence if both channels and the processor fail |
+| Thermal fuse (**mandatory**, no power-up without it) | cut-out near the wire clamp, ≈ 130 °C | last line of defence if both channels and the processor fail |
 
 ## 2. Commissioning gates (do not skip, do not reorder)
 
@@ -48,6 +48,12 @@ Compare with the evaluation: hold error ≤ 2 %, no overshoot beyond 5 %, no mon
 Anything outside that is a model error: log it, do not retune around it (see §4).
 
 **Gate 6, repetition.** 100 cycles. Log A_s, A_f, stroke at every re-homing. MEFF has no functional fatigue; a real wire does, so a drift here sets the re-homing interval.
+
+**Gate 7, 2 mm / 35 A power stage (separate from the 0.5 mm gates above; they do not validate it).** Preconditions: hardware overcurrent latch and independent over-temperature cutout built and tested (docs/SAFETY_PROCESSOR.md), thermal fuse fitted, laser range 10-20 mm, resin glass-transition temperature known.
+1. Cold resistance at 1 A, 4-wire, including clamps. Compare with the model (0.051 Ω martensite, 0.064 Ω austenite): contact resistance is unmeasured. Set R_ff and the monitor band from the measurement, not the model.
+2. Steps at 5 A, 15 A, 35 A, short pulses first. At each step R from V/I within 10 % of the model and temperature rise within 20 % of the model, else stop and identify.
+3. Verify the hardware trip with a deliberate overcurrent into a dummy load before the wire is connected.
+4. Only then closed loop, Gate 5 targets scaled to the wing stroke.
 
 ## 3. Logging for the thesis (validation data)
 
